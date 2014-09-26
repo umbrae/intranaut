@@ -1,0 +1,10 @@
+{
+  "name": "SnooTab",
+  "description": "What's SnooTab? Not much, what's SnooTab with you?",
+  "version": "0.1",
+  "incognito": "split",
+  "chrome_url_overrides": {
+    "newtab": "tab.html"
+  },
+  "manifest_version": 2
+}
