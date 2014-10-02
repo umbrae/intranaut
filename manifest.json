@@ -3,8 +3,12 @@
   "description": "What's SnooTab? Not much, what's SnooTab with you?",
   "version": "0.1",
   "incognito": "split",
+  "options_page": "options.html",
   "chrome_url_overrides": {
     "newtab": "tab.html"
   },
+  "permissions": [
+    "storage"
+  ],
   "manifest_version": 2
 }

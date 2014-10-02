@@ -17,8 +17,9 @@
       <div class="container">
         <div class="navbar-header">
           <a class="navbar-brand" href="https://www.reddit.com/">
-          <img src="assets/images/snoo.svg" class="logo" style="max-height: 40px; margin: 0; padding: 0; display: inline-block" />
-          we did it reddit!</a>
+            <img src="assets/images/snoo.svg" class="logo" style="max-height: 40px; margin: 0; padding: 0; display: inline-block" />
+            <span class="navbar-brand-name">we did it reddit!</span>
+          </a>
         </div>
         <form class="navbar-form navbar-right" role="form" method="get" action="https://reddit.atlassian.net/wiki/dosearchsite.action">
           <div class="input-group">
@@ -33,78 +34,17 @@
 
     <div class="container">
       <ul id="draggablePanelList" class="list-unstyled">
-        <li class="col-md-4" id="panel-everybody">
-          <div class="panel panel-success">
-            <div class="panel-heading">Everybody <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="https://mail.google.com/a/reddit.com" class="list-group-item">Mail</a>
-              <a href="https://reddit.atlassian.net/wiki/dashboard.action#" class="list-group-item">Wiki</a>
-              <a href="https://www.google.com/calendar/" class="list-group-item">Calendar</a>
-              <a href="#" class="list-group-item">IRC</a>
-              <a href="https://expensify.com/" class="list-group-item">Expensify</a>
-            </div>
-          </div>
-        </li>
-        <li class="col-md-4" id="panel-community">
-          <div class="panel panel-success">
-            <div class="panel-heading">Community <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="https://www.reddit.com/r/help" class="list-group-item">/r/help</a>
-              <a href="https://www.reddit.com/r/bugs" class="list-group-item">/r/bugs</a>
-              <a href="https://www.reddit.com/r/ideasfortheadmins" class="list-group-item">/r/ideasfortheadmins</a>
-              <a href="https://www.redditgifts.com" class="list-group-item ">redditgifts</a>
-              <a href="http://www.redditblog.com/" class="list-group-item">Blog</a>
-              <a href="https://www.reddit.com/r/random/" class="list-group-item">random button! <span class="badge">extra rad</span></a>
-            </div>
-          </div>
-        </li>
-        <li class="col-md-4" id="panel-engineering-com">
-          <div class="panel panel-success">
-            <div class="panel-heading">Engineering - reddit.com <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="https://github.com/reddit" class="list-group-item">GitHub</a>
-              <a href="https://harold.wireddit.com/" class="list-group-item">Harold</a>
-              <a href="https://github.com/reddit/reddit-public/wiki" class="list-group-item">Engineering Wiki</a>
-              <a href="https://dashboard.internal.wireddit.com/" class="list-group-item">Dashboards</a>
-              <a href="https://www.google.com/analytics" class="list-group-item">Google Analytics</a>
-              <a href="https://www.reddit.com/r/redditdev" class="list-group-item">/r/redditdev</a>
-            </div>
-          </div>
-        </li>
-        <li class="col-md-4" id="panel-engineering-redditgifts">
-          <div class="panel panel-success">
-          <div class="panel-heading">Engineering - redditgifts <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="https://github.com/redditgifts" class="list-group-item">GitHub</a>
-              <a href="https://dashboard.internal.wireddit.com/" class="list-group-item">Dashboards</a>
-              <a href="https://www.google.com/analytics" class="list-group-item">Google Analytics</a>
-            </div>
-          </div>
-        </li>
-        <li class="col-md-4" id="panel-ads">
-          <div class="panel panel-success">
-            <div class="panel-heading">Ads <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="#" class="list-group-item">BuySellAds</a>
-              <a href="https://www.reddit.com/sponsor/" class="list-group-item">Sponsored Links</a>
-              <a href="#" class="list-group-item">Adzerk</a>
-            </div>
-          </div>
-        </li>
-        <li class="col-md-4" id="panel-apps">
-          <div class="panel panel-success">
-            <div class="panel-heading">Apps <span class="pull-right glyphicon glyphicon-th"></span></div>
-            <div class="list-group">
-              <a href="#" class="list-group-item">AMA App</a>
-              <a href="#" class="list-group-item">AlienBlue</a>
-            </div>
-          </div>
-        </li>
       </ul>        
+    </div>
 
-    </div> <!-- /container -->
+    <li class="col-md-4 hide" id="panel-template">
+      <div class="panel panel-success">
+        <div class="panel-heading"><span class="panel-name"></span> <span class="pull-right glyphicon glyphicon-th"></span></div>
+        <div class="list-group">
+        </div>
+      </div>
+    </li>
 
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="assets/js/jquery-2.1.1.min.js"></script>
     <script src="assets/jquery-ui/jquery-ui.min.js"></script>
     <script src="assets/snooboots/js/bootstrap.min.js"></script>
