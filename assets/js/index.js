@@ -1,5 +1,5 @@
-$(function() {
-  var panelList = $('#draggablePanelList');
+var intranaut = (function() {
+  var REFRESH_TIME = 600;
 
   function now() {
     return Math.floor((new Date()).getTime() / 1000);
@@ -12,9 +12,41 @@ $(function() {
       $('.logo').attr('src', cfg.logo);
     }
 
-    var template = $('#panel-template');
+    loadPanels(cfg.panels);
+  }
 
-    $.each(cfg.panels, function(i, panel) {
+  function loadConfig() {
+    var lastFetch = localStorage.getItem('config_last_fetch');
+
+    if (lastFetch) {
+      config = JSON.parse(localStorage.getItem('config'));
+      if (config) {
+        parseConfig(config);
+      }
+    }
+
+    if ((now() - lastFetch) > REFRESH_TIME) {
+      chrome.storage.sync.get('data_url', function(items) {
+        $.get(items.data_url, function(response) {
+          localStorage.setItem('config_last_fetch', now())
+          localStorage.setItem('config', response);
+
+          if (!lastFetch) {
+            parseConfig(JSON.parse(response));
+          }
+        });
+      });
+
+      return;
+    }
+  }
+
+  function loadPanels(panels) {
+    var template = $('#panel-template');
+    var panelList = $('#draggablePanelList');
+
+    // Todo: Merge appending panels and sorting of panels, below
+    $.each(panels, function(i, panel) {
       var el = template.clone().removeClass('hide');
       el.find('.panel-name').text(panel.name)
       el.attr('id', 'panel-' + panel.id)
@@ -34,60 +66,44 @@ $(function() {
         group.append(a);
       })
 
-      $('#draggablePanelList').append(el);
+      panelList.append(el);
     });
-  }
 
-  function loadConfig() {
-    var lastFetch = localStorage.getItem('config_last_fetch');
-    if (!lastFetch || (now() - lastFetch) < 600) {
-      config = JSON.parse(localStorage.getItem('config'));
-      if (config) {
-        parseConfig(config);
-      }
-      return;
+    // hax to get display of panels to be nice and even
+    // todo: set height by row, update on order?
+    var maxHeight = Math.max.apply(null, panelList.find('li').map(function() { return $(this).height(); }))
+    panelList.find('li').height(maxHeight);
+
+    // Todo: merge this with loading of panels, above
+    if (localStorage.getItem('panel-sorting')) {
+      var sorting = JSON.parse(localStorage.getItem('panel-sorting'));
+      var newList = [];
+
+      $(sorting).each(function(i, el_id) {
+        newList.push(panelList.find('#' + el_id).detach())
+      });
+      newList.push(panelList.find('li').detach())
+
+      panelList.append(newList)
     }
 
-    chrome.storage.sync.get('data_url', function(items) {
-      $.get(items.data_url, function(response) {
-        localStorage.setItem('config_last_fetch', now())
-        localStorage.setItem('config', response);
-        parseConfig(JSON.parse(response));
-      });
-    });
-  }
-
-  loadConfig();
-
-  // hax to get sorting to work properly
-  var maxHeight = Math.max.apply(null, panelList.find('li').map(function() { return $(this).height(); }))
-  panelList.find('li').height(maxHeight);
-
-  if (localStorage.getItem('panel-sorting')) {
-    var sorting = JSON.parse(localStorage.getItem('panel-sorting'));
-    var newList = [];
-
-    $(sorting).each(function(i, el_id) {
-      newList.push(panelList.find('#' + el_id).detach())
-    });
-    newList.push(panelList.find('li').detach())
-
-    panelList.append(newList)
-  }
-
-  panelList.sortable({
+    panelList.sortable({
       handle: '.panel-heading', 
       update: function() {
-          $('.panel', panelList).each(function(index, elem) {
-               var $listItem = $(elem),
-                   newIndex = $listItem.index();
-
-               // Persist the new indices.
-          });
-
-          var panel_ids = panelList.children('li').map(function() { return this.id; }).toArray();
-          localStorage.setItem('panel-sorting', JSON.stringify(panel_ids));
+        var panel_ids = panelList.children('li').map(function() { return this.id; }).toArray();
+        localStorage.setItem('panel-sorting', JSON.stringify(panel_ids));
       }
-  });
+    });
+  }
 
-});
+  function init() {
+    $(document).on('ready', loadConfig);
+  }
+
+  return {
+    "init": init
+  };
+
+}());
+
+intranaut.init();
