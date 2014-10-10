@@ -8,6 +8,10 @@ var options = (function() {
     });
   }
 
+  var showStatus = function(t) {
+    $('#status').text(t).show().delay(1000).fadeOut();
+  }
+
   var saveOptions = function() {
     chrome.storage.sync.set({
       "data_url": $('#data_url').val()
@@ -15,7 +19,16 @@ var options = (function() {
 
     localStorage.setItem('config_last_fetch', 0);
 
-    $('#status').text("saved").show().delay(1000).fadeOut();
+    showStatus("saved");
+  }
+
+  var resetStorage = function() {
+    chrome.storage.local.set({
+      "config": null,
+      "config_last_fetch": null
+    })
+
+    showStatus("cleared");
   }
 
   var init = function() {
@@ -28,6 +41,13 @@ var options = (function() {
 
         saveOptions();
       });
+
+      $('#reset').on('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        resetStorage();
+      })
     });
   };
 

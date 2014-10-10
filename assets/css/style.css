@@ -11,6 +11,17 @@
   padding: 5px;
 }
 
+.navbar-brand img.logo {
+  max-height: 40px;
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+}
+
+.navbar-brand-name {
+  line-height: 40px;
+}
+
 .panel-heading {
   cursor: move;
 }
