@@ -1,14 +1,13 @@
 {
-  "name": "SnooTab",
-  "description": "What's SnooTab? Not much, what's SnooTab with you?",
-  "version": "0.1",
-  "incognito": "split",
-  "options_page": "options.html",
-  "chrome_url_overrides": {
-    "newtab": "tab.html"
-  },
+  "manifest_version": 2,
+  "name": "Intranaut",
+  "description": "An instant intranet.",
+  "version": "0.2",
   "permissions": [
     "storage"
   ],
-  "manifest_version": 2
+  "chrome_url_overrides": {
+    "newtab": "src/html/tab.html"
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
 }
