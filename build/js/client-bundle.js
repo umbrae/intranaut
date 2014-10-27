@@ -22,8 +22,7 @@ module.exports = React.createClass({displayName: 'exports',
         header: false,
         search: false,
         panels: []
-      },
-      panel_order: null
+      }
     };
   },
 
@@ -48,10 +47,6 @@ module.exports = React.createClass({displayName: 'exports',
           lastFetch = null;
           config = null;
         }
-      }
-
-      if (items.panel_order) {
-        state['panel_order'] = JSON.parse(items.panel_order);
       }
 
       if (lastFetch && config && this.isMounted()) {
@@ -170,10 +165,40 @@ module.exports = React.createClass({displayName: 'exports',
 /** @jsx React.DOM */var PanelItem = require('./panel_item.jsx');
 
 module.exports = React.createClass({displayName: 'exports',
+
+  dragStart: function(e) {
+    this.props.setDragging(e.target);
+  },
+
+  dragEnd: function(e) {
+    this.props.setDragging(null);
+  },
+
+  drop: function(e) {
+    var srcId = this.props.dragging.id;
+    var destId = e.currentTarget.id;
+
+    this.props.swapPanelOrder(srcId, destId);
+    e.target.classList.remove('over');
+  },
+
+  dragOver: function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'link';
+  },
+
+  dragEnter: function(e) {
+    e.target.classList.add('over');
+  },
+
+  dragLeave: function(e) {
+    e.target.classList.remove('over');
+  },
+
   render: function() {
     return (
       /* jshint ignore:start */
-      React.DOM.li({className: "col-md-4", id: this.props.id}, 
+      React.DOM.li({className: "col-md-4", draggable: "true", onDragStart: this.dragStart, onDragEnd: this.dragEnd, onDragOver: this.dragOver, onDragEnter: this.dragEnter, onDragLeave: this.dragLeave, onDrop: this.drop, id: this.props.id}, 
         React.DOM.div({className: "panel panel-success"}, 
           React.DOM.div({className: "panel-heading"}, 
             React.DOM.span({className: "panel-name"}, this.props.name), 
@@ -224,9 +249,26 @@ module.exports = React.createClass({displayName: 'exports',
 /** @jsx React.DOM */var Panel = require('./panel.jsx');
 
 module.exports = React.createClass({displayName: 'exports',
+  getInitialState: function() {
+    return {
+      dragging: null,
+      panel_order: null
+    };
+  },
+
+  componentDidMount: function () {
+    chrome.storage.local.get('panel_order', function(items) {
+      if (items.panel_order && this.isMounted()) {
+        this.setState({
+          panel_order: JSON.parse(items.panel_order)
+        });
+      }
+    }.bind(this));  
+  },
+
   /**
    * Explicitly set all panel heights to the same value for conformity
-   * TODO: Set by row?
+   * TODO: Set by row? set as state?
   **/
   componentDidUpdate: function () {
     var $node = $(this.getDOMNode());
@@ -234,12 +276,75 @@ module.exports = React.createClass({displayName: 'exports',
     $node.find('li').height(maxHeight);
   },
 
+  setDragging: function(el) {
+    this.setState({
+      dragging: el
+    });
+  },
+
+  setOrder: function(panel_order) {
+    this.setState({
+      panel_order: panel_order
+    });
+    chrome.storage.local.set({
+      panel_order: JSON.stringify(panel_order)
+    });
+  },
+
+  swapPanelOrder: function(srcId, destId) {
+    var panel_order = this.state.panel_order;
+    if (!panel_order) {
+      panel_order = _.pluck(this.props.panels, 'id');
+    }
+
+    var srcIndex = _.indexOf(panel_order, srcId);
+    var destIndex = _.indexOf(panel_order, destId);
+
+    if (srcIndex === -1) {
+      console.log("Unable to locate srcIndex in panel order for " + srcId);
+      return;
+    }
+
+    if (destIndex === -1) {
+      console.log("Unable to locate destIndex in panel order for " + destId);
+      return;
+    }
+
+    tmp = panel_order[srcIndex];
+    panel_order[srcIndex] = panel_order[destIndex];
+    panel_order[destIndex] = tmp;
+
+    this.setOrder(panel_order);
+  },
+
+  getSortedPanels: function() {
+    var indexedPanels = _.indexBy(this.props.panels, 'id');
+    var sortedPanels = [];
+
+    if (this.state.panel_order) {
+      _.each(this.state.panel_order, function(panel_id) {
+        if (_.has(indexedPanels, panel_id)) {
+          sortedPanels.push(indexedPanels[panel_id]);
+          delete indexedPanels[panel_id]
+        }
+      });
+      sortedPanels.push.apply(sortedPanels, _.values(indexedPanels));
+    } else {
+      sortedPanels = _.values(indexedPanels);
+    }
+
+    return sortedPanels;
+  },
+
   render: function() {
     return (
       /* jshint ignore:start */
       React.DOM.div({className: "container"}, 
         React.DOM.ul({id: "draggablePanelList", className: "list-unstyled"}, 
-          this.props.panels.map(function(panel, i) {
+          this.getSortedPanels().map(function(panel, i) {
+            panel.swapPanelOrder = this.swapPanelOrder;
+            panel.setDragging = this.setDragging;
+            panel.dragging = this.state.dragging;
             return Panel(panel);
           }.bind(this))
         )

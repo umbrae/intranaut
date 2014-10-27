@@ -14,8 +14,7 @@ module.exports = React.createClass({
         header: false,
         search: false,
         panels: []
-      },
-      panel_order: null
+      }
     };
   },
 
@@ -40,10 +39,6 @@ module.exports = React.createClass({
           lastFetch = null;
           config = null;
         }
-      }
-
-      if (items.panel_order) {
-        state['panel_order'] = JSON.parse(items.panel_order);
       }
 
       if (lastFetch && config && this.isMounted()) {
