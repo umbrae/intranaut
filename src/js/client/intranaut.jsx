@@ -10,9 +10,12 @@ function now() {
 module.exports = React.createClass({
   getInitialState: function() {
     return {
-      header: false,
-      search: false,
-      panels: [],
+      config: {
+        header: false,
+        search: false,
+        panels: []
+      },
+      panel_order: null
     };
   },
 
@@ -23,10 +26,12 @@ module.exports = React.createClass({
   componentDidMount: function () {
     chrome.storage.local.get({
       'config_last_fetch': null,
-      'config': null
+      'config': null,
+      'panel_order': null
     }, function(items) {
-      var lastFetch = items.config_last_fetch;
       var config;
+      var state = {};
+      var lastFetch = items.config_last_fetch;
 
       if (items.config) {
         try {
@@ -37,9 +42,15 @@ module.exports = React.createClass({
         }
       }
 
-      if (lastFetch && config && this.isMounted()) {
-        this.setState(config);
+      if (items.panel_order) {
+        state['panel_order'] = JSON.parse(items.panel_order);
       }
+
+      if (lastFetch && config && this.isMounted()) {
+        state['config'] = config;
+      }
+
+      this.setState(state);
 
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null); 
@@ -68,7 +79,9 @@ module.exports = React.createClass({
         });
 
         if (renderAfterSync) {
-          this.setState(config);
+          this.setState({
+            config: config
+          });
         }
       }.bind(this));
     }.bind(this));
@@ -79,10 +92,10 @@ module.exports = React.createClass({
       /* jshint ignore:start */
       <div>
         <NavBar
-          header={this.state.header}
-          search={this.state.search} />
+          header={this.state.config.header}
+          search={this.state.config.search} />
         <PanelList
-          panels={this.state.panels} />
+          panels={this.state.config.panels} />
       </div>
       /* jshint ignore:end */
     );
