@@ -1,13 +1,17 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** @jsx React.DOM */var Intranaut = require('./client/intranaut.jsx');
 
+var root = document.getElementById('intranaut');
+var isOptions = root.dataset.options;
+
 /* jshint ignore:start */
-React.renderComponent(Intranaut(null), document.getElementById('switcher'));
+React.renderComponent(Intranaut({isOptions: isOptions}), root);
 /* jshint ignore:end */
 
 },{"./client/intranaut.jsx":2}],2:[function(require,module,exports){
 /** @jsx React.DOM */var NavBar = require('./nav_bar.jsx');
 var PanelList = require('./panel_list.jsx');
+var ZeroState = require('./zero_state.jsx');
 
 var REFRESH_TIME = 600;
 
@@ -18,6 +22,7 @@ function now() {
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
+      firstRun: false,
       config: {
         header: false,
         search: false,
@@ -54,7 +59,6 @@ module.exports = React.createClass({displayName: 'exports',
       }
 
       this.setState(state);
-
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null); 
       }
@@ -67,6 +71,17 @@ module.exports = React.createClass({displayName: 'exports',
   **/
   syncConfig: function(renderAfterSync) {
     chrome.storage.sync.get('data_url', function(items) {
+      if (!items.data_url) {
+        this.setState({
+          firstRun: true
+        });
+        return;
+      } else {
+        this.setState({
+          firstRun: false
+        });
+      }
+
       $.get(items.data_url, function(response) {
         try {
           var config = JSON.parse(response);
@@ -90,9 +105,18 @@ module.exports = React.createClass({displayName: 'exports',
     }.bind(this));
   },
 
+  updateDataURL: function(dataURL) {
+    chrome.storage.sync.set({data_url: dataURL}, function() {
+      this.syncConfig(true);
+    }.bind(this))
+  },
+
   render: function() {
+    if (this.props.isOptions || this.state.firstRun) {
+      return ZeroState({updateDataURL: this.updateDataURL});
+    }
+
     return (
-      /* jshint ignore:start */
       React.DOM.div(null, 
         NavBar({
           header: this.state.config.header, 
@@ -100,12 +124,11 @@ module.exports = React.createClass({displayName: 'exports',
         PanelList({
           panels: this.state.config.panels})
       )
-      /* jshint ignore:end */
     );
   }
 });
 
-},{"./nav_bar.jsx":3,"./panel_list.jsx":6}],3:[function(require,module,exports){
+},{"./nav_bar.jsx":3,"./panel_list.jsx":6,"./zero_state.jsx":7}],3:[function(require,module,exports){
 /** @jsx React.DOM */module.exports = React.createClass({displayName: 'exports',
   getDefaultProps: function() {
     return {
@@ -354,4 +377,51 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 
-},{"./panel.jsx":4}]},{},[1])
+},{"./panel.jsx":4}],7:[function(require,module,exports){
+/** @jsx React.DOM */module.exports = React.createClass({displayName: 'exports',
+  getInitialState: function() {
+    return {
+      status: false
+    }
+  },
+
+  handleSubmit: function(e) {
+    e.preventDefault();
+    this.props.updateDataURL(this.refs.data_url.getDOMNode().value);
+    this.setState({
+      status: "Saved."
+    });
+  }, 
+
+  render: function() {
+    var formStatus;
+    if (this.state.status) {
+      formStatus = React.DOM.div({className: "alert alert-success"}, this.state.status)
+    }
+
+    return (
+      React.DOM.section({className: "zeroState col-md-8 col-md-push-2 text-center"}, 
+        React.DOM.header(null, 
+          React.DOM.h1(null, "Intranaut")
+        ), 
+        React.DOM.hr(null), 
+        React.DOM.form({role: "form", className: "welcomeForm", onSubmit: this.handleSubmit}, 
+          React.DOM.div({className: "form-group"}, 
+            React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
+            React.DOM.input({id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.p({className: "help-block"}, React.DOM.a({href: "#"}, "A sample version of an Intranaut configuration can be found here"), ".")
+          ), 
+
+          React.DOM.p(null, 
+            React.DOM.button({type: "submit", className: "btn btn-primary btn-lg"}, "Initialize")
+          ), 
+
+          formStatus
+        )
+      )
+    );
+  }
+});
+
+
+},{}]},{},[1])

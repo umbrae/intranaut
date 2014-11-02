@@ -1,5 +1,6 @@
 var NavBar = require('./nav_bar.jsx');
 var PanelList = require('./panel_list.jsx');
+var ZeroState = require('./zero_state.jsx');
 
 var REFRESH_TIME = 600;
 
@@ -10,6 +11,7 @@ function now() {
 module.exports = React.createClass({
   getInitialState: function() {
     return {
+      firstRun: false,
       config: {
         header: false,
         search: false,
@@ -46,7 +48,6 @@ module.exports = React.createClass({
       }
 
       this.setState(state);
-
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null); 
       }
@@ -59,6 +60,17 @@ module.exports = React.createClass({
   **/
   syncConfig: function(renderAfterSync) {
     chrome.storage.sync.get('data_url', function(items) {
+      if (!items.data_url) {
+        this.setState({
+          firstRun: true
+        });
+        return;
+      } else {
+        this.setState({
+          firstRun: false
+        });
+      }
+
       $.get(items.data_url, function(response) {
         try {
           var config = JSON.parse(response);
@@ -82,9 +94,18 @@ module.exports = React.createClass({
     }.bind(this));
   },
 
+  updateDataURL: function(dataURL) {
+    chrome.storage.sync.set({data_url: dataURL}, function() {
+      this.syncConfig(true);
+    }.bind(this))
+  },
+
   render: function() {
+    if (this.props.isOptions || this.state.firstRun) {
+      return <ZeroState updateDataURL={this.updateDataURL} />;
+    }
+
     return (
-      /* jshint ignore:start */
       <div>
         <NavBar
           header={this.state.config.header}
@@ -92,7 +113,6 @@ module.exports = React.createClass({
         <PanelList
           panels={this.state.config.panels} />
       </div>
-      /* jshint ignore:end */
     );
   }
 });
