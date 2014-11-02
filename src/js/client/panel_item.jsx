@@ -1,15 +1,3 @@
-        // // Just links for now
-        // var a = $('<a />')
-        //   .attr('href', content.url)
-        //   .text(content.name)
-        //   .addClass('list-group-item');
-
-        // if (content.badge) {
-        //   a.append($('<span class="badge" />').text(content.badge));
-        // }
-
-        // group.append(a);
-
 module.exports = React.createClass({
   render: function() {
     var badgeEl = false;
