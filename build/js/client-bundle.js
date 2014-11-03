@@ -23,11 +23,14 @@ module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
       firstRun: false,
+      dataURL: null,
       config: {
         header: false,
         search: false,
         panels: []
-      }
+      },
+      configLastFetch: null,
+      panelOrder: []
     };
   },
 
@@ -35,80 +38,96 @@ module.exports = React.createClass({displayName: 'exports',
    * Fetch our config from localstorage, and render it. If we have no config yet,
    * fetch it first. If we have a config but it's out of date, refresh in the background.
   **/
-  componentDidMount: function () {
-    chrome.storage.local.get({
-      'config_last_fetch': null,
-      'config': null,
-      'panel_order': null
-    }, function(items) {
-      var config;
-      var state = {};
-      var lastFetch = items.config_last_fetch;
+  loadState: function () {
+    // todo promisify
+    chrome.storage.sync.get({
+      'dataURL': false
+    }, function(syncItems) {
 
-      if (items.config) {
-        try {
-          config = JSON.parse(items.config);
-        } catch(e) {
-          lastFetch = null;
-          config = null;
+      chrome.storage.local.get({
+        'config_last_fetch': null,
+        'config': null,
+        'panel_order': null
+      }, function(localItems) {
+        var state = {
+          dataURL: syncItems.dataURL,
+          firstRun: !syncItems.dataURL,
+          configLastFetch: localItems.configLastFetch
         }
-      }
 
-      if (lastFetch && config && this.isMounted()) {
-        state['config'] = config;
-      }
+        if (localItems.config) {
+          state['config'] = JSON.parse(localItems.config);
+        }
 
-      this.setState(state);
-      if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
-        this.syncConfig(lastFetch == null); 
-      }
+        if (localItems.panel_order) {
+          state['panel_order'] = JSON.parse(localItems.panel_order);
+        }
+
+        this.setState(state);
+
+        var configIsStale = !state.configLastFetch || (now() - state.configLastFetch) > REFRESH_TIME;
+        if (this.state.dataURL && configIsStale) {
+          this.syncConfig();
+        }
+      }.bind(this))
     }.bind(this));
+  },
+
+  storeState: function () {
+    chrome.storage.sync.set({
+      'dataURL': this.state.dataURL
+    });
+
+    chrome.storage.local.set({
+      'config_last_fetch': this.state.configLastFetch,
+      'config': JSON.stringify(this.state.config),
+      'panel_order': JSON.stringify(this.state.panelOrder)
+    });
+  },
+
+  componentDidMount: function () {
+    this.loadState();
+  },
+
+  componentDidUpdate: function (prevProps, prevState) {
+    this.storeState();
+
+    if (this.state.dataURL && prevState.dataURL !== this.state.dataURL) {
+      this.syncConfig();
+    }
   },
 
   /**
    * Synchronize the config from the remote store to local storage.
-   * @param renderAfterSync bool - if true, run renderConfig after loading.
   **/
-  syncConfig: function(renderAfterSync) {
-    chrome.storage.sync.get('data_url', function(items) {
-      if (!items.data_url) {
-        this.setState({
-          firstRun: true
-        });
+  syncConfig: function() {
+    if (!this.state.dataURL) {
+      console.warn("Cannot sync config: dataURL is not set.");
+      return;
+    }
+
+    $.get(this.state.dataURL, function(response) {
+      try {
+        var config = JSON.parse(response);
+      } catch(e) {
+        alert("Unable to load config. There may be a problem with your configuration file? " +
+              "Please check your options and contact your sysadmin.");
         return;
-      } else {
-        this.setState({
-          firstRun: false
-        });
       }
 
-      $.get(items.data_url, function(response) {
-        try {
-          var config = JSON.parse(response);
-        } catch(e) {
-          alert("Unable to load config. There may be a problem with your configuration file? " +
-                "Please check your options and contact your sysadmin.");
-          return;
-        }
-
-        chrome.storage.local.set({
-          'config_last_fetch': now(),
-          'config': JSON.stringify(config)
-        });
-
-        if (renderAfterSync) {
-          this.setState({
-            config: config
-          });
-        }
-      }.bind(this));
+      this.setState({
+        firstRun: false,
+        configLastFetch: now(),
+        config: config
+      });
+      this.render();
     }.bind(this));
   },
 
   updateDataURL: function(dataURL) {
-    chrome.storage.sync.set({data_url: dataURL}, function() {
-      this.syncConfig(true);
-    }.bind(this))
+    this.setState({
+      dataURL: dataURL
+    });
   },
 
   render: function() {
@@ -239,19 +258,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 },{"./panel_item.jsx":5}],5:[function(require,module,exports){
-/** @jsx React.DOM */        // // Just links for now
-        // var a = $('<a />')
-        //   .attr('href', content.url)
-        //   .text(content.name)
-        //   .addClass('list-group-item');
-
-        // if (content.badge) {
-        //   a.append($('<span class="badge" />').text(content.badge));
-        // }
-
-        // group.append(a);
-
-module.exports = React.createClass({displayName: 'exports',
+/** @jsx React.DOM */module.exports = React.createClass({displayName: 'exports',
   render: function() {
     var badgeEl = false;
     if (this.props.badge) {
@@ -387,7 +394,7 @@ module.exports = React.createClass({displayName: 'exports',
 
   handleSubmit: function(e) {
     e.preventDefault();
-    this.props.updateDataURL(this.refs.data_url.getDOMNode().value);
+    this.props.updateDataURL(this.refs.dataURL.getDOMNode().value);
     this.setState({
       status: "Saved."
     });
@@ -407,8 +414,8 @@ module.exports = React.createClass({displayName: 'exports',
         React.DOM.hr(null), 
         React.DOM.form({role: "form", className: "welcomeForm", onSubmit: this.handleSubmit}, 
           React.DOM.div({className: "form-group"}, 
-            React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
-            React.DOM.input({id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.label({htmlFor: "dataURL"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
+            React.DOM.input({id: "dataURL", type: "url", ref: "dataURL", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "#"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 

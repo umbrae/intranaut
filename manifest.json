@@ -9,6 +9,5 @@
   "chrome_url_overrides": {
     "newtab": "src/html/tab.html"
   },
-  "options_page": "src/html/options.html",
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+  "options_page": "src/html/options.html"
 }

@@ -7,7 +7,7 @@ module.exports = React.createClass({
 
   handleSubmit: function(e) {
     e.preventDefault();
-    this.props.updateDataURL(this.refs.data_url.getDOMNode().value);
+    this.props.updateDataURL(this.refs.dataURL.getDOMNode().value);
     this.setState({
       status: "Saved."
     });
@@ -27,8 +27,8 @@ module.exports = React.createClass({
         <hr />
         <form role="form" className="welcomeForm" onSubmit={this.handleSubmit}>
           <div className="form-group">
-            <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
-            <input id="data_url" type="url" ref="data_url" className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+            <label htmlFor="dataURL">Please enter the configuration URL provided by your sysadmin or manager.</label>
+            <input id="dataURL" type="url" ref="dataURL" className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
             <p className="help-block"><a href="#">A sample version of an Intranaut configuration can be found here</a>.</p>
           </div>
 
