@@ -22,6 +22,7 @@ function now() {
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
+      dataURL: false,
       firstRun: false,
       config: {
         header: false,
@@ -58,7 +59,11 @@ module.exports = React.createClass({displayName: 'exports',
         state['config'] = config;
       }
 
-      this.setState(state);
+      chrome.storage.sync.get('data_url', function(sync_items) {
+        state['dataURL'] = sync_items.data_url;
+        this.setState(state);
+      }.bind(this));
+
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null); 
       }
@@ -105,15 +110,21 @@ module.exports = React.createClass({displayName: 'exports',
     }.bind(this));
   },
 
-  updateDataURL: function(dataURL) {
-    chrome.storage.sync.set({data_url: dataURL}, function() {
-      this.syncConfig(true);
-    }.bind(this))
+  updateDataURL: function(dataURL, sync) {
+    this.setState({
+      dataURL: dataURL
+    });
+
+    if (sync) {
+      chrome.storage.sync.set({data_url: dataURL}, function() {
+        this.syncConfig(true);
+      }.bind(this))
+    }
   },
 
   render: function() {
     if (this.props.isOptions || this.state.firstRun) {
-      return ZeroState({updateDataURL: this.updateDataURL});
+      return ZeroState({updateDataURL: this.updateDataURL, dataURL: this.state.dataURL});
     }
 
     return (
@@ -229,6 +240,7 @@ module.exports = React.createClass({displayName: 'exports',
           ), 
           React.DOM.div({className: "list-group"}, 
             this.props.contents.map(function(panelItem, i) {
+              panelItem.key = panelItem.name;
               return PanelItem(panelItem);
             }.bind(this))
           )
@@ -356,6 +368,7 @@ module.exports = React.createClass({displayName: 'exports',
             panel.swapPanelOrder = this.swapPanelOrder;
             panel.setDragging = this.setDragging;
             panel.dragging = this.state.dragging;
+            panel.key = panel.id;
             return Panel(panel);
           }.bind(this))
         )
@@ -374,12 +387,15 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   handleSubmit: function(e) {
-    e.preventDefault();
-    this.props.updateDataURL(this.refs.data_url.getDOMNode().value);
+    this.props.updateDataURL(this.refs.data_url.getDOMNode().value, true);
     this.setState({
       status: "Saved."
     });
   }, 
+
+  handleDataURLChange: function(e) {
+    this.props.updateDataURL(this.refs.data_url.getDOMNode().value, false);
+  },
 
   render: function() {
     var formStatus;
@@ -396,7 +412,7 @@ module.exports = React.createClass({displayName: 'exports',
         React.DOM.form({role: "form", className: "welcomeForm", onSubmit: this.handleSubmit}, 
           React.DOM.div({className: "form-group"}, 
             React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
-            React.DOM.input({id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.input({value: this.props.dataURL, onChange: this.handleDataURLChange, id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "#"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 

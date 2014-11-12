@@ -97,6 +97,7 @@ module.exports = React.createClass({
             panel.swapPanelOrder = this.swapPanelOrder;
             panel.setDragging = this.setDragging;
             panel.dragging = this.state.dragging;
+            panel.key = panel.id;
             return Panel(panel);
           }.bind(this))}
         </ul>

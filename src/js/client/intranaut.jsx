@@ -11,6 +11,7 @@ function now() {
 module.exports = React.createClass({
   getInitialState: function() {
     return {
+      dataURL: false,
       firstRun: false,
       config: {
         header: false,
@@ -47,7 +48,11 @@ module.exports = React.createClass({
         state['config'] = config;
       }
 
-      this.setState(state);
+      chrome.storage.sync.get('data_url', function(sync_items) {
+        state['dataURL'] = sync_items.data_url;
+        this.setState(state);
+      }.bind(this));
+
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null); 
       }
@@ -94,15 +99,21 @@ module.exports = React.createClass({
     }.bind(this));
   },
 
-  updateDataURL: function(dataURL) {
-    chrome.storage.sync.set({data_url: dataURL}, function() {
-      this.syncConfig(true);
-    }.bind(this))
+  updateDataURL: function(dataURL, sync) {
+    this.setState({
+      dataURL: dataURL
+    });
+
+    if (sync) {
+      chrome.storage.sync.set({data_url: dataURL}, function() {
+        this.syncConfig(true);
+      }.bind(this))
+    }
   },
 
   render: function() {
     if (this.props.isOptions || this.state.firstRun) {
-      return <ZeroState updateDataURL={this.updateDataURL} />;
+      return <ZeroState updateDataURL={this.updateDataURL} dataURL={this.state.dataURL} />;
     }
 
     return (

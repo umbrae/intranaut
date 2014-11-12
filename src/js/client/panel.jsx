@@ -42,6 +42,7 @@ module.exports = React.createClass({
           </div>
           <div className="list-group">
             {this.props.contents.map(function(panelItem, i) {
+              panelItem.key = panelItem.name;
               return PanelItem(panelItem);
             }.bind(this))}
           </div>
