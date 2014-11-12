@@ -239,19 +239,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 },{"./panel_item.jsx":5}],5:[function(require,module,exports){
-/** @jsx React.DOM */        // // Just links for now
-        // var a = $('<a />')
-        //   .attr('href', content.url)
-        //   .text(content.name)
-        //   .addClass('list-group-item');
-
-        // if (content.badge) {
-        //   a.append($('<span class="badge" />').text(content.badge));
-        // }
-
-        // group.append(a);
-
-module.exports = React.createClass({displayName: 'exports',
+/** @jsx React.DOM */module.exports = React.createClass({displayName: 'exports',
   render: function() {
     var badgeEl = false;
     if (this.props.badge) {
