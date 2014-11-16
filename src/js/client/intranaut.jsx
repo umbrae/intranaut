@@ -28,7 +28,7 @@ module.exports = React.createClass({
     Store.on('localStorageLoaded', function(items) {
       var config;
       var state = {};
-      var lastFetch = items.config_last_fetch;
+      var lastFetch = items.configLastFetch;
 
       if (items.config) {
         try {
@@ -43,8 +43,8 @@ module.exports = React.createClass({
         state['config'] = config;
       }
 
-      if (items.panel_order) {
-        state['panelOrder'] = JSON.parse(items.panel_order);
+      if (items.panelOrder) {
+        state['panelOrder'] = JSON.parse(items.panelOrder);
       }
 
       this.setState(state);
@@ -65,7 +65,7 @@ module.exports = React.createClass({
         panelOrder: newPanelOrder
       });
       chrome.storage.local.set({
-        panel_order: JSON.stringify(newPanelOrder)
+        panelOrder: JSON.stringify(newPanelOrder)
       });
     }.bind(this))
   },
@@ -78,9 +78,9 @@ module.exports = React.createClass({
     this.addListeners();
 
     chrome.storage.local.get({
-      'config_last_fetch': null,
+      'configLastFetch': null,
       'config': null,
-      'panel_order': null
+      'panelOrder': null
     }, function(items) {
       Store.emit('localStorageLoaded', items);
     });
@@ -119,7 +119,7 @@ module.exports = React.createClass({
         }
 
         chrome.storage.local.set({
-          'config_last_fetch': now(),
+          'configLastFetch': now(),
           'config': JSON.stringify(config)
         });
 
@@ -156,7 +156,7 @@ module.exports = React.createClass({
           search={this.state.config.search} />
         <PanelList
           panels={this.state.config.panels}
-          panel_order={this.state.panelOrder} />
+          panelOrder={this.state.panelOrder} />
       </div>
     );
   }

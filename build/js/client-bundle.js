@@ -379,7 +379,7 @@ module.exports = React.createClass({displayName: 'exports',
     Store.on('localStorageLoaded', function(items) {
       var config;
       var state = {};
-      var lastFetch = items.config_last_fetch;
+      var lastFetch = items.configLastFetch;
 
       if (items.config) {
         try {
@@ -394,11 +394,11 @@ module.exports = React.createClass({displayName: 'exports',
         state['config'] = config;
       }
 
-      if (items.panel_order) {
-        state['panelOrder'] = JSON.parse(items.panel_order);
+      if (items.panelOrder) {
+        state['panelOrder'] = JSON.parse(items.panelOrder);
       }
 
-      this.setState(state);            
+      this.setState(state);
 
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
         this.syncConfig(lastFetch == null);
@@ -412,12 +412,11 @@ module.exports = React.createClass({displayName: 'exports',
     }.bind(this));
 
     Store.on('panelReorder', function(newPanelOrder) {
-      console.log(newPanelOrder);
       this.setState({
         panelOrder: newPanelOrder
       });
       chrome.storage.local.set({
-        panel_order: JSON.stringify(newPanelOrder)
+        panelOrder: JSON.stringify(newPanelOrder)
       });
     }.bind(this))
   },
@@ -430,9 +429,9 @@ module.exports = React.createClass({displayName: 'exports',
     this.addListeners();
 
     chrome.storage.local.get({
-      'config_last_fetch': null,
+      'configLastFetch': null,
       'config': null,
-      'panel_order': null
+      'panelOrder': null
     }, function(items) {
       Store.emit('localStorageLoaded', items);
     });
@@ -471,7 +470,7 @@ module.exports = React.createClass({displayName: 'exports',
         }
 
         chrome.storage.local.set({
-          'config_last_fetch': now(),
+          'configLastFetch': now(),
           'config': JSON.stringify(config)
         });
 
@@ -508,7 +507,7 @@ module.exports = React.createClass({displayName: 'exports',
           search: this.state.config.search}), 
         PanelList({
           panels: this.state.config.panels, 
-          panel_order: this.state.panelOrder})
+          panelOrder: this.state.panelOrder})
       )
     );
   }
@@ -651,19 +650,8 @@ module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
       dragging: null
-      // panel_order: null
     };
   },
-
-  // componentDidMount: function () {
-  //   chrome.storage.local.get('panel_order', function(items) {
-  //     if (items.panel_order && this.isMounted()) {
-  //       this.setState({
-  //         panel_order: JSON.parse(items.panel_order)
-  //       });
-  //     }
-  //   }.bind(this));  
-  // },
 
   /**
    * Explicitly set all panel heights in a row to the same value for conformity
@@ -685,23 +673,14 @@ module.exports = React.createClass({displayName: 'exports',
     });
   },
 
-  // setOrder: function(panel_order) {
-  //   this.setState({
-  //     panel_order: panel_order
-  //   });
-  //   chrome.storage.local.set({
-  //     panel_order: JSON.stringify(panel_order)
-  //   });
-  // },
-
   swapPanelOrder: function(srcId, destId) {
-    var panel_order = this.props.panel_order;
-    if (!panel_order) {
-      panel_order = _.pluck(this.props.panels, 'id');
+    var panelOrder = this.props.panelOrder;
+    if (!panelOrder) {
+      panelOrder = _.pluck(this.props.panels, 'id');
     }
 
-    var srcIndex = _.indexOf(panel_order, srcId);
-    var destIndex = _.indexOf(panel_order, destId);
+    var srcIndex = _.indexOf(panelOrder, srcId);
+    var destIndex = _.indexOf(panelOrder, destId);
 
     if (srcIndex === -1) {
       console.log("Unable to locate srcIndex in panel order for " + srcId);
@@ -713,24 +692,22 @@ module.exports = React.createClass({displayName: 'exports',
       return;
     }
 
-    tmp = panel_order[srcIndex];
-    panel_order[srcIndex] = panel_order[destIndex];
-    panel_order[destIndex] = tmp;
+    tmp = panelOrder[srcIndex];
+    panelOrder[srcIndex] = panelOrder[destIndex];
+    panelOrder[destIndex] = tmp;
 
-    Store.emit('panelReorder', panel_order);
-
-    // this.setOrder(panel_order);
+    Store.emit('panelReorder', panelOrder);
   },
 
   getSortedPanels: function() {
     var indexedPanels = _.indexBy(this.props.panels, 'id');
     var sortedPanels = [];
 
-    if (this.props.panel_order) {
-      _.each(this.props.panel_order, function(panel_id) {
-        if (_.has(indexedPanels, panel_id)) {
-          sortedPanels.push(indexedPanels[panel_id]);
-          delete indexedPanels[panel_id]
+    if (this.props.panelOrder) {
+      _.each(this.props.panelOrder, function(panelId) {
+        if (_.has(indexedPanels, panelId)) {
+          sortedPanels.push(indexedPanels[panelId]);
+          delete indexedPanels[panelId]
         }
       });
       sortedPanels.push.apply(sortedPanels, _.values(indexedPanels));

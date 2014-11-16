@@ -29,13 +29,13 @@ module.exports = React.createClass({
   },
 
   swapPanelOrder: function(srcId, destId) {
-    var panel_order = this.props.panel_order;
-    if (!panel_order) {
-      panel_order = _.pluck(this.props.panels, 'id');
+    var panelOrder = this.props.panelOrder;
+    if (!panelOrder) {
+      panelOrder = _.pluck(this.props.panels, 'id');
     }
 
-    var srcIndex = _.indexOf(panel_order, srcId);
-    var destIndex = _.indexOf(panel_order, destId);
+    var srcIndex = _.indexOf(panelOrder, srcId);
+    var destIndex = _.indexOf(panelOrder, destId);
 
     if (srcIndex === -1) {
       console.log("Unable to locate srcIndex in panel order for " + srcId);
@@ -47,22 +47,22 @@ module.exports = React.createClass({
       return;
     }
 
-    tmp = panel_order[srcIndex];
-    panel_order[srcIndex] = panel_order[destIndex];
-    panel_order[destIndex] = tmp;
+    tmp = panelOrder[srcIndex];
+    panelOrder[srcIndex] = panelOrder[destIndex];
+    panelOrder[destIndex] = tmp;
 
-    Store.emit('panelReorder', panel_order);
+    Store.emit('panelReorder', panelOrder);
   },
 
   getSortedPanels: function() {
     var indexedPanels = _.indexBy(this.props.panels, 'id');
     var sortedPanels = [];
 
-    if (this.props.panel_order) {
-      _.each(this.props.panel_order, function(panel_id) {
-        if (_.has(indexedPanels, panel_id)) {
-          sortedPanels.push(indexedPanels[panel_id]);
-          delete indexedPanels[panel_id]
+    if (this.props.panelOrder) {
+      _.each(this.props.panelOrder, function(panelId) {
+        if (_.has(indexedPanels, panelId)) {
+          sortedPanels.push(indexedPanels[panelId]);
+          delete indexedPanels[panelId]
         }
       });
       sortedPanels.push.apply(sortedPanels, _.values(indexedPanels));
