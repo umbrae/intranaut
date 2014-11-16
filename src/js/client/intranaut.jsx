@@ -1,6 +1,7 @@
 var NavBar = require('./nav_bar.jsx');
 var PanelList = require('./panel_list.jsx');
 var ZeroState = require('./zero_state.jsx');
+var Store = require('./store.jsx');
 
 var REFRESH_TIME = 600;
 

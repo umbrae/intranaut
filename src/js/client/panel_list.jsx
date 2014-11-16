@@ -1,4 +1,5 @@
 var Panel = require('./panel.jsx');
+var Store = require('./store.jsx');
 
 module.exports = React.createClass({
   getInitialState: function() {
@@ -19,13 +20,17 @@ module.exports = React.createClass({
   },
 
   /**
-   * Explicitly set all panel heights to the same value for conformity
-   * TODO: Set by row? set as state?
+   * Explicitly set all panel heights in a row to the same value for conformity
   **/
   componentDidUpdate: function () {
-    var $node = $(this.getDOMNode());
-    var maxHeight = Math.max.apply(null, $node.find('li').map(function() { return $(this).height(); }))
-    $node.find('li').height(maxHeight);
+    var panelsByRow = _.groupBy($('li', this.getDOMNode()), function(el) {
+      return $(el).position().top;
+    });
+
+    _.each(panelsByRow, function(panels) {
+      var maxHeight = _.max(_.map(panels, function(el) { return $(el).height() }));
+      $(panels).height(maxHeight);
+    });
   },
 
   setDragging: function(el) {
@@ -65,6 +70,8 @@ module.exports = React.createClass({
     tmp = panel_order[srcIndex];
     panel_order[srcIndex] = panel_order[destIndex];
     panel_order[destIndex] = tmp;
+
+    Store.emit('reorder-panels', panel_order);
 
     this.setOrder(panel_order);
   },
