@@ -363,7 +363,7 @@ function now() {
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
-      dataURL: false,
+      dataURL: null,
       firstRun: false,
       config: {
         header: false,
@@ -376,22 +376,22 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   addListeners: function() {
-    Store.on('localStorageLoaded', function(items) {
+    Store.on('storageLoaded', function(items) {
       var config;
-      var state = {};
-      var lastFetch = items.configLastFetch;
+      var state = {
+        firstRun: !items.dataURL,
+        dataURL: items.dataURL,
+        configLastFetch: items.configLastFetch
+      };
 
       if (items.config) {
         try {
           config = JSON.parse(items.config);
+          state['config'] = config;
         } catch(e) {
-          lastFetch = null;
+          state.configLastFetch = null;
           config = null;
         }
-      }
-
-      if (lastFetch && config && this.isMounted()) {
-        state['config'] = config;
       }
 
       if (items.panelOrder) {
@@ -400,15 +400,9 @@ module.exports = React.createClass({displayName: 'exports',
 
       this.setState(state);
 
-      if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
-        this.syncConfig(lastFetch == null);
+      if (!config || (now() - state.configLastFetch) > REFRESH_TIME) {
+        this.syncConfig();
       }
-    }.bind(this));
-
-    Store.on('syncStorageLoaded', function(items) {
-      var state = {};
-      state['dataURL'] = sync_items.data_url;
-      this.setState(state);
     }.bind(this));
 
     Store.on('panelReorder', function(newPanelOrder) {
@@ -419,6 +413,49 @@ module.exports = React.createClass({displayName: 'exports',
         panelOrder: JSON.stringify(newPanelOrder)
       });
     }.bind(this))
+
+    Store.on('dataURLChange', function(dataURL) {
+      this.setState({
+        dataURL: dataURL,
+        firstRun: !dataURL,
+        configLastFetch: null
+      });
+      chrome.storage.sync.set({
+        dataURL: dataURL
+      });
+      chrome.storage.local.set({
+        configLastFetch: null
+      });
+
+      // Reload our data, which will fetch the new data URL
+      this.loadFromStorage();
+    }.bind(this))
+
+    Store.on('configChange', function(newConfig) {
+      chrome.storage.local.set({
+        'configLastFetch': now(),
+        'config': JSON.stringify(newConfig)
+      });
+
+      this.setState({
+        configLastFetch: now(),
+        config: newConfig
+      });
+    }.bind(this));
+  },
+
+  loadFromStorage: function () {
+    chrome.storage.sync.get({
+      'dataURL': null
+    }, function(sync_items) {
+      chrome.storage.local.get({
+        'configLastFetch': null,
+        'config': null,
+        'panelOrder': null
+      }, function(local_items) {
+        Store.emit('storageLoaded', _.defaults(sync_items, local_items));
+      });
+    });
   },
 
   /**
@@ -427,20 +464,7 @@ module.exports = React.createClass({displayName: 'exports',
   **/
   componentDidMount: function () {
     this.addListeners();
-
-    chrome.storage.local.get({
-      'configLastFetch': null,
-      'config': null,
-      'panelOrder': null
-    }, function(items) {
-      Store.emit('localStorageLoaded', items);
-    });
-
-    chrome.storage.sync.get({
-      'dataURL': null
-    }, function(items) {
-      Store.emit('syncStorageLoaded', items);
-    })
+    this.loadFromStorage();
   },
 
   /**
@@ -448,56 +472,27 @@ module.exports = React.createClass({displayName: 'exports',
    * @param renderAfterSync bool - if true, run renderConfig after loading.
   **/
   syncConfig: function(renderAfterSync) {
-    chrome.storage.sync.get('data_url', function(items) {
-      if (!items.data_url) {
-        this.setState({
-          firstRun: true
-        });
+    if (!this.state.dataURL) {
+      return;
+    }
+
+    $.get(this.state.dataURL, function(response) {
+      try {
+        var config = JSON.parse(response);
+      } catch(e) {
+        alert("Unable to load config. There may be a problem with your configuration file? " +
+              "Please check your options and contact your sysadmin.");
         return;
-      } else {
-        this.setState({
-          firstRun: false
-        });
       }
 
-      $.get(items.data_url, function(response) {
-        try {
-          var config = JSON.parse(response);
-        } catch(e) {
-          alert("Unable to load config. There may be a problem with your configuration file? " +
-                "Please check your options and contact your sysadmin.");
-          return;
-        }
-
-        chrome.storage.local.set({
-          'configLastFetch': now(),
-          'config': JSON.stringify(config)
-        });
-
-        if (renderAfterSync) {
-          this.setState({
-            config: config
-          });
-        }
-      }.bind(this));
+      Store.emit('configChange', config);
     }.bind(this));
   },
 
-  updateDataURL: function(dataURL, sync) {
-    this.setState({
-      dataURL: dataURL
-    });
-
-    if (sync) {
-      chrome.storage.sync.set({data_url: dataURL}, function() {
-        this.syncConfig(true);
-      }.bind(this))
-    }
-  },
-
   render: function() {
+
     if (this.props.isOptions || this.state.firstRun) {
-      return ZeroState({updateDataURL: this.updateDataURL, dataURL: this.state.dataURL});
+      return ZeroState({dataURL: this.state.dataURL});
     }
 
     return (
@@ -744,22 +739,34 @@ var Store = ee({});
 
 module.exports = Store;
 },{"event-emitter":1}],23:[function(require,module,exports){
-/** @jsx React.DOM */module.exports = React.createClass({displayName: 'exports',
+/** @jsx React.DOM */var Store = require('./store.jsx');
+
+module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
-      status: false
+      status: false,
+      currentDataURL: this.props.dataURL
     }
   },
 
+  componentWillReceiveProps: function (nextProps) {
+    this.setState({
+      currentDataURL: nextProps.dataURL
+    })
+  },
+
   handleSubmit: function(e) {
-    this.props.updateDataURL(this.refs.data_url.getDOMNode().value, true);
+    e.preventDefault();
+    Store.emit('dataURLChange', this.refs.data_url.getDOMNode().value)
     this.setState({
       status: "Saved."
     });
   }, 
 
   handleDataURLChange: function(e) {
-    this.props.updateDataURL(this.refs.data_url.getDOMNode().value, false);
+    this.setState({
+      'currentDataURL': this.refs.data_url.getDOMNode().value
+    });
   },
 
   render: function() {
@@ -777,7 +784,7 @@ module.exports = Store;
         React.DOM.form({role: "form", className: "welcomeForm", onSubmit: this.handleSubmit}, 
           React.DOM.div({className: "form-group"}, 
             React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
-            React.DOM.input({value: this.props.dataURL, onChange: this.handleDataURLChange, id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.input({value: this.state.currentDataURL, onChange: this.handleDataURLChange, id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "#"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 
@@ -793,4 +800,4 @@ module.exports = Store;
 });
 
 
-},{}]},{},[16])
+},{"./store.jsx":22}]},{},[16])
