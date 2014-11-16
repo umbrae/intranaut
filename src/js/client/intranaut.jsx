@@ -18,20 +18,14 @@ module.exports = React.createClass({
         header: false,
         search: false,
         panels: []
-      }
+      },
+      configLastFetch: null,
+      panelOrder: null
     };
   },
 
-  /**
-   * Fetch our config from localstorage, and render it. If we have no config yet,
-   * fetch it first. If we have a config but it's out of date, refresh in the background.
-  **/
-  componentDidMount: function () {
-    chrome.storage.local.get({
-      'config_last_fetch': null,
-      'config': null,
-      'panel_order': null
-    }, function(items) {
+  addListeners: function() {
+    Store.on('localStorageLoaded', function(items) {
       var config;
       var state = {};
       var lastFetch = items.config_last_fetch;
@@ -49,15 +43,53 @@ module.exports = React.createClass({
         state['config'] = config;
       }
 
-      chrome.storage.sync.get('data_url', function(sync_items) {
-        state['dataURL'] = sync_items.data_url;
-        this.setState(state);
-      }.bind(this));
+      if (items.panel_order) {
+        state['panelOrder'] = JSON.parse(items.panel_order);
+      }
+
+      this.setState(state);
 
       if (!lastFetch || (now() - lastFetch) > REFRESH_TIME) {
-        this.syncConfig(lastFetch == null); 
+        this.syncConfig(lastFetch == null);
       }
     }.bind(this));
+
+    Store.on('syncStorageLoaded', function(items) {
+      var state = {};
+      state['dataURL'] = sync_items.data_url;
+      this.setState(state);
+    }.bind(this));
+
+    Store.on('panelReorder', function(newPanelOrder) {
+      this.setState({
+        panelOrder: newPanelOrder
+      });
+      chrome.storage.local.set({
+        panel_order: JSON.stringify(newPanelOrder)
+      });
+    }.bind(this))
+  },
+
+  /**
+   * Fetch our config from localstorage, and render it. If we have no config yet,
+   * fetch it first. If we have a config but it's out of date, refresh in the background.
+  **/
+  componentDidMount: function () {
+    this.addListeners();
+
+    chrome.storage.local.get({
+      'config_last_fetch': null,
+      'config': null,
+      'panel_order': null
+    }, function(items) {
+      Store.emit('localStorageLoaded', items);
+    });
+
+    chrome.storage.sync.get({
+      'dataURL': null
+    }, function(items) {
+      Store.emit('syncStorageLoaded', items);
+    })
   },
 
   /**
@@ -123,7 +155,8 @@ module.exports = React.createClass({
           header={this.state.config.header}
           search={this.state.config.search} />
         <PanelList
-          panels={this.state.config.panels} />
+          panels={this.state.config.panels}
+          panel_order={this.state.panelOrder} />
       </div>
     );
   }
