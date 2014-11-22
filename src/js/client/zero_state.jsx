@@ -1,3 +1,4 @@
+var React = require('react/addons')
 var Store = require('./store.jsx');
 
 module.exports = React.createClass({
@@ -44,7 +45,12 @@ module.exports = React.createClass({
           <div className="form-group">
             <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
             <input value={this.state.currentDataURL} onChange={this.handleDataURLChange} id="data_url" type="url" ref="data_url" className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
-            <p className="help-block"><a href="#">A sample version of an Intranaut configuration can be found here</a>.</p>
+            <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
+          </div>
+
+          <div className="form-group">
+            <label><input type="checkbox" onChange={this.toggleCustomPanel} /> Create a Custom Panel of Links I Specify</label>
+
           </div>
 
           <p>

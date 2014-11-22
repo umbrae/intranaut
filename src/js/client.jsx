@@ -1,3 +1,4 @@
+var React = require('react/addons')
 var Intranaut = require('./client/intranaut.jsx');
 
 var root = document.getElementById('intranaut');

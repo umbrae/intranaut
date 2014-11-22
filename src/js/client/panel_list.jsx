@@ -1,3 +1,4 @@
+var React = require('react/addons')
 var Panel = require('./panel.jsx');
 var Store = require('./store.jsx');
 

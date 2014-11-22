@@ -1,3 +1,5 @@
+var React = require('react/addons')
+
 var PanelItem = require('./panel_item.jsx');
 
 module.exports = React.createClass({

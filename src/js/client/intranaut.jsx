@@ -1,6 +1,9 @@
+var React = require('react/addons')
 var NavBar = require('./nav_bar.jsx');
 var PanelList = require('./panel_list.jsx');
 var ZeroState = require('./zero_state.jsx');
+var Options = require('./options.jsx');
+
 var Store = require('./store.jsx');
 
 var REFRESH_TIME = 600;
@@ -20,7 +23,8 @@ module.exports = React.createClass({
         panels: []
       },
       configLastFetch: null,
-      panelOrder: null
+      panelOrder: null,
+      customLinks: []
     };
   },
 
@@ -45,6 +49,10 @@ module.exports = React.createClass({
 
       if (items.panelOrder) {
         state['panelOrder'] = JSON.parse(items.panelOrder);
+      }
+
+      if (items.customLinks) {
+        state['customLinks'] = JSON.parse(items.customLinks);
       }
 
       this.setState(state);
@@ -80,6 +88,15 @@ module.exports = React.createClass({
       this.loadFromStorage();
     }.bind(this))
 
+    Store.on('customLinksChange', function(customLinks) {
+      this.setState({
+        customLinks: customLinks
+      })
+      chrome.storage.local.set({
+        customLinks: JSON.stringify(customLinks)
+      });
+    }.bind(this))
+
     Store.on('configChange', function(newConfig) {
       chrome.storage.local.set({
         'configLastFetch': now(),
@@ -100,7 +117,8 @@ module.exports = React.createClass({
       chrome.storage.local.get({
         'configLastFetch': null,
         'config': null,
-        'panelOrder': null
+        'panelOrder': null,
+        'customLinks': null
       }, function(local_items) {
         Store.emit('storageLoaded', _.defaults(sync_items, local_items));
       });
@@ -138,11 +156,31 @@ module.exports = React.createClass({
     }.bind(this));
   },
 
+  getPanels: function() {
+    if (_.isEmpty(this.state.customLinks)) {
+      return this.state.config.panels;
+    }
+
+    return this.state.config.panels.concat([{
+      "id": "custom2",
+      "key": "custom2",
+      "name": "Links2",
+      "contents": this.state.customLinks
+    }])
+  },
+
   render: function() {
+
+    if (this.props.isOptions) {
+      return <Options dataURL={this.state.dataURL} customLinks={this.state.customLinks} />;
+    }
 
     if (this.props.isOptions || this.state.firstRun) {
       return <ZeroState dataURL={this.state.dataURL} />;
     }
+
+    var panels = this.getPanels();
+    console.log(panels);
 
     return (
       <div>
