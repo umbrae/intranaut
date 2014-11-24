@@ -6,23 +6,36 @@ var Options = require('./options.jsx');
 
 var Store = require('./store.jsx');
 
+var ConfigStore = require('./stores/config.jsx');
+var DataURLStore = require('./stores/dataurl.jsx');
+
 var REFRESH_TIME = 600;
+
+function getDataURLState() {
+  return DataURLStore.getDataURL();
+}
+
+function getConfigState() {
+  return ConfigStore.getConfig();
+}
+
+function getConfigLastFetchState() {
+  return ConfigStore.getLastFetch();
+}
 
 function now() {
   return Math.floor((new Date()).getTime() / 1000);
 }
 
+
+
 module.exports = React.createClass({
   getInitialState: function() {
     return {
-      dataURL: null,
+      dataURL: getDataURLState(),
       firstRun: false,
-      config: {
-        header: false,
-        search: false,
-        panels: []
-      },
-      configLastFetch: null,
+      config: getConfigState(),
+      configLastFetch: getConfigLastFetchState(),
       panelOrder: null,
       customLinks: []
     };
@@ -125,11 +138,29 @@ module.exports = React.createClass({
     });
   },
 
+  _onConfigChange: function() {
+    this.setState({
+      config: getConfigState(),
+      configLastFetch: getConfigLastFetchState()
+    });
+  },
+
+  _onDataURLChange: function() {
+    this.setState({
+      dataURL: getDataURLState()
+    });
+  },
+
   /**
    * Fetch our config from localstorage, and render it. If we have no config yet,
    * fetch it first. If we have a config but it's out of date, refresh in the background.
   **/
   componentDidMount: function () {
+    ConfigStore.addChangeListener(this._onConfigChange);
+    DataURLStore.addChangeListener(this._onDataURLChange);
+
+    DataURLStore.loadFromStorage();
+
     this.addListeners();
     this.loadFromStorage();
   },
