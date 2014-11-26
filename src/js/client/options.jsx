@@ -36,26 +36,30 @@ module.exports = React.createClass({
   getInitialState: function() {
     return {
       status: false,
-      currentDataURL: this.props.dataURL,
+      dataURL: DataURLStore.getDataURL(),
       customPanelName: "",
       customLinks: this.props.customLinks
     }
   },
 
+  _onDataURLChange: function() {
+    this.setState({
+      dataURL: DataURLStore.getDataURL()
+    });
+  },
+
+  componentDidMount: function () {
+    DataURLStore.addChangeListener(this._onDataURLChange);
+  },
+
   componentWillReceiveProps: function (nextProps) {
     this.setState({
-      currentDataURL: nextProps.dataURL,
       customLinks: nextProps.customLinks
     })
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-
-    console.log('test');
-    DataURLStore.setDataURL(this.state.currentDataURL);
-
-//    Store.emit('dataURLChange', this.state.currentDataURL)
 
     var customLinkContents = []
     _.each(this.refs, function(ref, name) {
@@ -69,6 +73,10 @@ module.exports = React.createClass({
     this.setState({
       status: "Saved."
     });
+  },
+
+  handleDataURL: function(e) {
+    DataURLStore.setDataURL(e.target.value);
   },
 
   render: function() {
@@ -98,7 +106,7 @@ module.exports = React.createClass({
           <div className="form-group">
             <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
             
-            <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+            <input type="url" value={this.state.dataURL} onChange={this.handleDataURL} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
             <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
           </div>
 

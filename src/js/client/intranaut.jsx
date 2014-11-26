@@ -8,45 +8,44 @@ var Store = require('./store.jsx');
 
 var ConfigStore = require('./stores/config.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
+
+window.stores = [
+  ConfigStore, DataURLStore, UserOptionsStore
+]
 
 var REFRESH_TIME = 600;
 
-function getDataURLState() {
-  return DataURLStore.getDataURL();
-}
-
 function getConfigState() {
-  return ConfigStore.getConfig();
+  return {
+    "configLoaded": ConfigStore.hasLoaded(),
+    "config": ConfigStore.getConfig(),
+    "configLastFetch": ConfigStore.getLastFetch()
+  };
 }
 
-function getConfigLastFetchState() {
-  return ConfigStore.getLastFetch();
+function getUserOptionsState() {
+  return {
+    "panelOrder": UserOptionsStore.getPanelOrder(),
+    "customLinks": UserOptionsStore.getCustomLinks()
+  };
 }
 
 function now() {
   return Math.floor((new Date()).getTime() / 1000);
 }
 
-
-
 module.exports = React.createClass({
   getInitialState: function() {
-    return {
-      dataURL: getDataURLState(),
-      firstRun: false,
-      config: getConfigState(),
-      configLastFetch: getConfigLastFetchState(),
-      panelOrder: null,
-      customLinks: []
-    };
+    return _.extend({
+      dataURL: DataURLStore.getDataURL(),
+    }, getConfigState(), getUserOptionsState());
   },
 
   addListeners: function() {
     Store.on('storageLoaded', function(items) {
       var config;
       var state = {
-        firstRun: !items.dataURL,
-        dataURL: items.dataURL,
         configLastFetch: items.configLastFetch
       };
 
@@ -84,23 +83,6 @@ module.exports = React.createClass({
       });
     }.bind(this))
 
-    Store.on('dataURLChange', function(dataURL) {
-      this.setState({
-        dataURL: dataURL,
-        firstRun: !dataURL,
-        configLastFetch: null
-      });
-      chrome.storage.sync.set({
-        dataURL: dataURL
-      });
-      chrome.storage.local.set({
-        configLastFetch: null
-      });
-
-      // Reload our data, which will fetch the new data URL
-      this.loadFromStorage();
-    }.bind(this))
-
     Store.on('customLinksChange', function(customLinks) {
       this.setState({
         customLinks: customLinks
@@ -124,31 +106,28 @@ module.exports = React.createClass({
   },
 
   loadFromStorage: function () {
-    chrome.storage.sync.get({
-      'dataURL': null
-    }, function(sync_items) {
-      chrome.storage.local.get({
-        'configLastFetch': null,
-        'config': null,
-        'panelOrder': null,
-        'customLinks': null
-      }, function(local_items) {
-        Store.emit('storageLoaded', _.defaults(sync_items, local_items));
-      });
+    chrome.storage.local.get({
+      'configLastFetch': null,
+      'config': null,
+      'panelOrder': null,
+      'customLinks': null
+    }, function(local_items) {
+      Store.emit('storageLoaded', local_items);
     });
   },
 
   _onConfigChange: function() {
-    this.setState({
-      config: getConfigState(),
-      configLastFetch: getConfigLastFetchState()
-    });
+    this.setState(getConfigState());
   },
 
   _onDataURLChange: function() {
     this.setState({
-      dataURL: getDataURLState()
+      dataURL: DataURLStore.getDataURL()
     });
+  },
+
+  _onUserOptionsChange: function() {
+    this.setState(getUserOptionsState());
   },
 
   /**
@@ -158,8 +137,11 @@ module.exports = React.createClass({
   componentDidMount: function () {
     ConfigStore.addChangeListener(this._onConfigChange);
     DataURLStore.addChangeListener(this._onDataURLChange);
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
 
     DataURLStore.loadFromStorage();
+    ConfigStore.loadFromStorage();
+    UserOptionsStore.loadFromStorage();
 
     this.addListeners();
     this.loadFromStorage();
@@ -201,17 +183,17 @@ module.exports = React.createClass({
   },
 
   render: function() {
+    var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
 
     if (this.props.isOptions) {
       return <Options dataURL={this.state.dataURL} customLinks={this.state.customLinks} />;
     }
 
-    if (this.props.isOptions || this.state.firstRun) {
+    if (this.props.isOptions || firstRun) {
       return <ZeroState dataURL={this.state.dataURL} />;
     }
 
     var panels = this.getPanels();
-    console.log(panels);
 
     return (
       <div>

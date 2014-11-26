@@ -19743,45 +19743,44 @@ var Store = require('./store.jsx');
 
 var ConfigStore = require('./stores/config.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
+
+window.stores = [
+  ConfigStore, DataURLStore, UserOptionsStore
+]
 
 var REFRESH_TIME = 600;
 
-function getDataURLState() {
-  return DataURLStore.getDataURL();
-}
-
 function getConfigState() {
-  return ConfigStore.getConfig();
+  return {
+    "configLoaded": ConfigStore.hasLoaded(),
+    "config": ConfigStore.getConfig(),
+    "configLastFetch": ConfigStore.getLastFetch()
+  };
 }
 
-function getConfigLastFetchState() {
-  return ConfigStore.getLastFetch();
+function getUserOptionsState() {
+  return {
+    "panelOrder": UserOptionsStore.getPanelOrder(),
+    "customLinks": UserOptionsStore.getCustomLinks()
+  };
 }
 
 function now() {
   return Math.floor((new Date()).getTime() / 1000);
 }
 
-
-
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
-    return {
-      dataURL: getDataURLState(),
-      firstRun: false,
-      config: getConfigState(),
-      configLastFetch: getConfigLastFetchState(),
-      panelOrder: null,
-      customLinks: []
-    };
+    return _.extend({
+      dataURL: DataURLStore.getDataURL(),
+    }, getConfigState(), getUserOptionsState());
   },
 
   addListeners: function() {
     Store.on('storageLoaded', function(items) {
       var config;
       var state = {
-        firstRun: !items.dataURL,
-        dataURL: items.dataURL,
         configLastFetch: items.configLastFetch
       };
 
@@ -19819,23 +19818,6 @@ module.exports = React.createClass({displayName: 'exports',
       });
     }.bind(this))
 
-    Store.on('dataURLChange', function(dataURL) {
-      this.setState({
-        dataURL: dataURL,
-        firstRun: !dataURL,
-        configLastFetch: null
-      });
-      chrome.storage.sync.set({
-        dataURL: dataURL
-      });
-      chrome.storage.local.set({
-        configLastFetch: null
-      });
-
-      // Reload our data, which will fetch the new data URL
-      this.loadFromStorage();
-    }.bind(this))
-
     Store.on('customLinksChange', function(customLinks) {
       this.setState({
         customLinks: customLinks
@@ -19859,32 +19841,28 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   loadFromStorage: function () {
-    chrome.storage.sync.get({
-      'dataURL': null
-    }, function(sync_items) {
-      chrome.storage.local.get({
-        'configLastFetch': null,
-        'config': null,
-        'panelOrder': null,
-        'customLinks': null
-      }, function(local_items) {
-        Store.emit('storageLoaded', _.defaults(sync_items, local_items));
-      });
+    chrome.storage.local.get({
+      'configLastFetch': null,
+      'config': null,
+      'panelOrder': null,
+      'customLinks': null
+    }, function(local_items) {
+      Store.emit('storageLoaded', local_items);
     });
   },
 
   _onConfigChange: function() {
-    this.setState({
-      config: getConfigState(),
-      configLastFetch: getConfigLastFetchState()
-    });
+    this.setState(getConfigState());
   },
 
   _onDataURLChange: function() {
-    console.log('whoa');
     this.setState({
-      dataURL: getDataURLState()
+      dataURL: DataURLStore.getDataURL()
     });
+  },
+
+  _onUserOptionsChange: function() {
+    this.setState(getUserOptionsState());
   },
 
   /**
@@ -19894,8 +19872,11 @@ module.exports = React.createClass({displayName: 'exports',
   componentDidMount: function () {
     ConfigStore.addChangeListener(this._onConfigChange);
     DataURLStore.addChangeListener(this._onDataURLChange);
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
 
     DataURLStore.loadFromStorage();
+    ConfigStore.loadFromStorage();
+    UserOptionsStore.loadFromStorage();
 
     this.addListeners();
     this.loadFromStorage();
@@ -19937,17 +19918,17 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   render: function() {
+    var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
 
     if (this.props.isOptions) {
       return Options({dataURL: this.state.dataURL, customLinks: this.state.customLinks});
     }
 
-    if (this.props.isOptions || this.state.firstRun) {
+    if (this.props.isOptions || firstRun) {
       return ZeroState({dataURL: this.state.dataURL});
     }
 
     var panels = this.getPanels();
-    console.log(panels);
 
     return (
       React.DOM.div(null, 
@@ -19962,7 +19943,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 
-},{"./nav_bar.jsx":170,"./options.jsx":171,"./panel_list.jsx":174,"./store.jsx":175,"./stores/config.jsx":177,"./stores/dataurl.jsx":178,"./zero_state.jsx":179,"react/addons":1}],170:[function(require,module,exports){
+},{"./nav_bar.jsx":170,"./options.jsx":171,"./panel_list.jsx":174,"./store.jsx":175,"./stores/config.jsx":177,"./stores/dataurl.jsx":178,"./stores/useroptions.jsx":179,"./zero_state.jsx":180,"react/addons":1}],170:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 
 module.exports = React.createClass({displayName: 'exports',
@@ -20059,26 +20040,30 @@ module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
       status: false,
-      currentDataURL: this.props.dataURL,
+      dataURL: DataURLStore.getDataURL(),
       customPanelName: "",
       customLinks: this.props.customLinks
     }
   },
 
+  _onDataURLChange: function() {
+    this.setState({
+      dataURL: DataURLStore.getDataURL()
+    });
+  },
+
+  componentDidMount: function () {
+    DataURLStore.addChangeListener(this._onDataURLChange);
+  },
+
   componentWillReceiveProps: function (nextProps) {
     this.setState({
-      currentDataURL: nextProps.dataURL,
       customLinks: nextProps.customLinks
     })
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-
-    console.log('test');
-    DataURLStore.setDataURL(this.state.currentDataURL);
-
-//    Store.emit('dataURLChange', this.state.currentDataURL)
 
     var customLinkContents = []
     _.each(this.refs, function(ref, name) {
@@ -20092,6 +20077,10 @@ module.exports = React.createClass({displayName: 'exports',
     this.setState({
       status: "Saved."
     });
+  },
+
+  handleDataURL: function(e) {
+    DataURLStore.setDataURL(e.target.value);
   },
 
   render: function() {
@@ -20121,7 +20110,7 @@ module.exports = React.createClass({displayName: 'exports',
           React.DOM.div({className: "form-group"}, 
             React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
             
-            React.DOM.input({type: "url", valueLink: this.linkState('currentDataURL'), className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.input({type: "url", value: this.state.dataURL, onChange: this.handleDataURL, className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 
@@ -20351,7 +20340,10 @@ var config = {
   search: false,
   panels: []
 };
+
 var lastFetch = null;
+
+var loaded = false;
 
 function now() {
   return Math.floor((new Date()).getTime() / 1000);
@@ -20374,6 +20366,29 @@ ConfigStore = assign({}, BaseStore, {
   setConfig: function(cfg) {
     config = cfg;
     this.emitChange();
+  },
+
+  hasLoaded: function() {
+    return loaded;
+  },
+
+  loadFromStorage: function() {
+    chrome.storage.local.get({
+      configLastFetch: null,
+      config: null,
+    }, function(items) {
+      loaded = true;
+
+      try {
+        config = JSON.parse(items.config);
+        lastFetch = items.configLastFetch;
+      } catch(e) {
+        config = null;
+        lastFetch = null;
+      }
+
+      this.emitChange();
+    }.bind(this));
   }
 });
 
@@ -20391,6 +20406,9 @@ var DataURLStore = assign({}, BaseStore, {
 
   setDataURL: function(url) {
     dataURL = url;
+    chrome.storage.sync.set({
+      dataURL: url
+    });
     this.emitChange();
   },
 
@@ -20406,6 +20424,57 @@ var DataURLStore = assign({}, BaseStore, {
 
 module.exports = DataURLStore;
 },{"./base.jsx":176,"object-assign":167}],179:[function(require,module,exports){
+/** @jsx React.DOM */var BaseStore = require('./base.jsx');
+var assign = require('object-assign');
+
+var panelOrder = null;
+var customLinks = [];
+
+UserOptionsStore = assign({}, BaseStore, {
+  getPanelOrder: function() {
+    return panelOrder;
+  },
+
+  getCustomLinks: function() {
+    return customLinks;
+  },
+
+  setPanelOrder: function(order) {
+    panelOrder = order;
+    chrome.storage.local.set({
+      panelOrder: JSON.stringify(order)
+    });
+    this.emitChange();
+  },
+
+  setCustomLinks: function(links) {
+    customLinks = links;
+    chrome.storage.local.set({
+      customLinks: JSON.stringify(links)
+    });
+    this.emitChange();
+  },
+
+  loadFromStorage: function() {
+    chrome.storage.local.get({
+      panelOrder: null,
+      customLinks: null,
+    }, function(items) {
+      try {
+        panelOrder = JSON.parse(items.panelOrder);
+        customLinks = JSON.parse(items.customLinks);
+      } catch(e) {
+        panelOrder = null;
+        customLinks = null;
+      }
+
+      this.emitChange();
+    }.bind(this));
+  }
+});
+
+module.exports = UserOptionsStore;
+},{"./base.jsx":176,"object-assign":167}],180:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 var Store = require('./store.jsx');
 

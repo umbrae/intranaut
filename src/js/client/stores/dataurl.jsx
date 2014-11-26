@@ -10,6 +10,9 @@ var DataURLStore = assign({}, BaseStore, {
 
   setDataURL: function(url) {
     dataURL = url;
+    chrome.storage.sync.set({
+      dataURL: url
+    });
     this.emitChange();
   },
 
