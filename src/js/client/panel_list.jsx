@@ -16,7 +16,9 @@ module.exports = React.createClass({
   },
 
   _onUserOptionsChange: function () {
-    this.setState(getPanelOrderState());
+    if (this.isMounted()) {
+      this.setState(getPanelOrderState());
+    }
   },
 
   componentDidMount: function () {

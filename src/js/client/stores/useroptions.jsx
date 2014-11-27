@@ -1,7 +1,7 @@
 var BaseStore = require('./base.jsx');
 var assign = require('object-assign');
 
-var panelOrder = null;
+var panelOrder = [];
 var customLinks = [];
 
 UserOptionsStore = assign({}, BaseStore, {
@@ -31,15 +31,15 @@ UserOptionsStore = assign({}, BaseStore, {
 
   loadFromStorage: function() {
     chrome.storage.local.get({
-      panelOrder: null,
-      customLinks: null,
+      panelOrder: [],
+      customLinks: [],
     }, function(items) {
       try {
         panelOrder = JSON.parse(items.panelOrder);
         customLinks = JSON.parse(items.customLinks);
       } catch(e) {
-        panelOrder = null;
-        customLinks = null;
+        panelOrder = [];
+        customLinks = [];
       }
 
       this.emitChange();

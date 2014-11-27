@@ -19739,17 +19739,15 @@ var PanelList = require('./panel_list.jsx');
 var ZeroState = require('./zero_state.jsx');
 var Options = require('./options.jsx');
 
-var Store = require('./store.jsx');
-
 var ConfigStore = require('./stores/config.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
-window.stores = [
-  ConfigStore, DataURLStore, UserOptionsStore
-]
-
-var REFRESH_TIME = 600;
+function getDataURLState() {
+  return {
+    dataURL: DataURLStore.getDataURL()
+  };
+}
 
 function getConfigState() {
   return {
@@ -19765,53 +19763,9 @@ function getUserOptionsState() {
   };
 }
 
-function now() {
-  return Math.floor((new Date()).getTime() / 1000);
-}
-
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
-    return _.extend({
-      dataURL: DataURLStore.getDataURL(),
-    }, getConfigState(), getUserOptionsState());
-  },
-
-  addListeners: function() {
-    Store.on('storageLoaded', function(items) {
-      if (!items.config || (now() - this.state.configLastFetch) > REFRESH_TIME) {
-        this.syncConfig();
-      }
-    }.bind(this));
-
-    Store.on('customLinksChange', function(customLinks) {
-      this.setState({
-        customLinks: customLinks
-      })
-      chrome.storage.local.set({
-        customLinks: JSON.stringify(customLinks)
-      });
-    }.bind(this))
-
-    Store.on('configChange', function(newConfig) {
-      chrome.storage.local.set({
-        'configLastFetch': now(),
-        'config': JSON.stringify(newConfig)
-      });
-
-      this.setState({
-        configLastFetch: now(),
-        config: newConfig
-      });
-    }.bind(this));
-  },
-
-  loadFromStorage: function () {
-    chrome.storage.local.get({
-      'configLastFetch': null,
-      'config': null
-    }, function(local_items) {
-      Store.emit('storageLoaded', local_items);
-    });
+    return _.extend({}, getDataURLState(), getConfigState(), getUserOptionsState());
   },
 
   _onConfigChange: function() {
@@ -19819,9 +19773,14 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   _onDataURLChange: function() {
-    this.setState({
-      dataURL: DataURLStore.getDataURL()
-    });
+    var newState = getDataURLState();
+
+    // Todo: This feels a little bit like the wrong place. Should it be in ConfigStore?
+    if (this.state.dataURL && this.state.dataURL != newState.dataURL) {
+      ConfigStore.loadFromDataURL();
+    }
+
+    this.setState(newState);
   },
 
   _onUserOptionsChange: function() {
@@ -19840,44 +19799,6 @@ module.exports = React.createClass({displayName: 'exports',
     DataURLStore.loadFromStorage();
     ConfigStore.loadFromStorage();
     UserOptionsStore.loadFromStorage();
-
-    this.addListeners();
-    this.loadFromStorage();
-  },
-
-  /**
-   * Synchronize the config from the remote store to local storage.
-   * @param renderAfterSync bool - if true, run renderConfig after loading.
-  **/
-  syncConfig: function(renderAfterSync) {
-    if (!this.state.dataURL) {
-      return;
-    }
-
-    $.get(this.state.dataURL, function(response) {
-      try {
-        var config = JSON.parse(response);
-      } catch(e) {
-        alert("Unable to load config. There may be a problem with your configuration file? " +
-              "Please check your options and contact your sysadmin.");
-        return;
-      }
-
-      Store.emit('configChange', config);
-    }.bind(this));
-  },
-
-  getPanels: function() {
-    if (_.isEmpty(this.state.customLinks)) {
-      return this.state.config.panels;
-    }
-
-    return this.state.config.panels.concat([{
-      "id": "custom2",
-      "key": "custom2",
-      "name": "Links2",
-      "contents": this.state.customLinks
-    }])
   },
 
   render: function() {
@@ -19891,8 +19812,6 @@ module.exports = React.createClass({displayName: 'exports',
       return ZeroState({dataURL: this.state.dataURL});
     }
 
-    var panels = this.getPanels();
-
     return (
       React.DOM.div(null, 
         NavBar({
@@ -19905,7 +19824,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 
-},{"./nav_bar.jsx":170,"./options.jsx":171,"./panel_list.jsx":174,"./store.jsx":175,"./stores/config.jsx":177,"./stores/dataurl.jsx":178,"./stores/useroptions.jsx":179,"./zero_state.jsx":180,"react/addons":1}],170:[function(require,module,exports){
+},{"./nav_bar.jsx":170,"./options.jsx":171,"./panel_list.jsx":174,"./stores/config.jsx":177,"./stores/dataurl.jsx":178,"./stores/useroptions.jsx":179,"./zero_state.jsx":180,"react/addons":1}],170:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 
 module.exports = React.createClass({displayName: 'exports',
@@ -20189,7 +20108,9 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   _onUserOptionsChange: function () {
-    this.setState(getPanelOrderState());
+    if (this.isMounted()) {
+      this.setState(getPanelOrderState());
+    }
   },
 
   componentDidMount: function () {
@@ -20309,13 +20230,19 @@ console.log(BaseStore);
 module.exports = BaseStore;
 },{"events":150,"object-assign":167}],177:[function(require,module,exports){
 /** @jsx React.DOM */var BaseStore = require('./base.jsx');
+var DataURLStore = require('./dataurl.jsx');
 var assign = require('object-assign');
 
-var config = {
+
+var REFRESH_TIME = 600;
+
+var DEFAULT_CONFIG_TEMPLATE = {
   header: false,
   search: false,
   panels: []
-};
+}
+
+var config = DEFAULT_CONFIG_TEMPLATE;
 
 var lastFetch = null;
 
@@ -20341,6 +20268,11 @@ ConfigStore = assign({}, BaseStore, {
 
   setConfig: function(cfg) {
     config = cfg;
+    this.touchLastFetch();
+    chrome.storage.local.set({
+      config: JSON.stringify(config),
+      configLastFetch: lastFetch
+    });
     this.emitChange();
   },
 
@@ -20351,16 +20283,47 @@ ConfigStore = assign({}, BaseStore, {
   loadFromStorage: function() {
     chrome.storage.local.get({
       configLastFetch: null,
-      config: null,
+      config: DEFAULT_CONFIG_TEMPLATE,
     }, function(items) {
       loaded = true;
+
+      console.log(items);
 
       try {
         config = JSON.parse(items.config);
         lastFetch = items.configLastFetch;
       } catch(e) {
-        config = null;
+        config = DEFAULT_CONFIG_TEMPLATE;
         lastFetch = null;
+      }
+
+      if (_.isEmpty(config.panels) || (now() - lastFetch) > REFRESH_TIME) {
+        console.log(config);
+        console.log(now() - lastFetch);
+        this.loadFromDataURL();
+      }
+
+      this.emitChange();
+    }.bind(this));
+  },
+
+  loadFromDataURL: function() {
+    var url = DataURLStore.getDataURL();
+
+    console.log("Loading " + url);
+
+    if (!url) {
+      console.log("No data URL, unable to load.");
+      return;
+    }
+
+    $.get(url, function(response) {
+      try {
+        this.setConfig(JSON.parse(response));
+      } catch(e) {
+        alert("Unable to load config. There may be a problem with your configuration file? " +
+              "Please check your options and contact your sysadmin.");
+        return;
       }
 
       this.emitChange();
@@ -20369,7 +20332,7 @@ ConfigStore = assign({}, BaseStore, {
 });
 
 module.exports = ConfigStore;
-},{"./base.jsx":176,"object-assign":167}],178:[function(require,module,exports){
+},{"./base.jsx":176,"./dataurl.jsx":178,"object-assign":167}],178:[function(require,module,exports){
 /** @jsx React.DOM */var BaseStore = require('./base.jsx');
 var assign = require('object-assign');
 
@@ -20403,7 +20366,7 @@ module.exports = DataURLStore;
 /** @jsx React.DOM */var BaseStore = require('./base.jsx');
 var assign = require('object-assign');
 
-var panelOrder = null;
+var panelOrder = [];
 var customLinks = [];
 
 UserOptionsStore = assign({}, BaseStore, {
@@ -20433,15 +20396,15 @@ UserOptionsStore = assign({}, BaseStore, {
 
   loadFromStorage: function() {
     chrome.storage.local.get({
-      panelOrder: null,
-      customLinks: null,
+      panelOrder: [],
+      customLinks: [],
     }, function(items) {
       try {
         panelOrder = JSON.parse(items.panelOrder);
         customLinks = JSON.parse(items.customLinks);
       } catch(e) {
-        panelOrder = null;
-        customLinks = null;
+        panelOrder = [];
+        customLinks = [];
       }
 
       this.emitChange();
