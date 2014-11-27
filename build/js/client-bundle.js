@@ -19761,7 +19761,6 @@ function getConfigState() {
 
 function getUserOptionsState() {
   return {
-    "panelOrder": UserOptionsStore.getPanelOrder(),
     "customLinks": UserOptionsStore.getCustomLinks()
   };
 }
@@ -19779,44 +19778,10 @@ module.exports = React.createClass({displayName: 'exports',
 
   addListeners: function() {
     Store.on('storageLoaded', function(items) {
-      var config;
-      var state = {
-        configLastFetch: items.configLastFetch
-      };
-
-      if (items.config) {
-        try {
-          config = JSON.parse(items.config);
-          state['config'] = config;
-        } catch(e) {
-          state.configLastFetch = null;
-          config = null;
-        }
-      }
-
-      if (items.panelOrder) {
-        state['panelOrder'] = JSON.parse(items.panelOrder);
-      }
-
-      if (items.customLinks) {
-        state['customLinks'] = JSON.parse(items.customLinks);
-      }
-
-      this.setState(state);
-
-      if (!config || (now() - state.configLastFetch) > REFRESH_TIME) {
+      if (!items.config || (now() - this.state.configLastFetch) > REFRESH_TIME) {
         this.syncConfig();
       }
     }.bind(this));
-
-    Store.on('panelReorder', function(newPanelOrder) {
-      this.setState({
-        panelOrder: newPanelOrder
-      });
-      chrome.storage.local.set({
-        panelOrder: JSON.stringify(newPanelOrder)
-      });
-    }.bind(this))
 
     Store.on('customLinksChange', function(customLinks) {
       this.setState({
@@ -19843,9 +19808,7 @@ module.exports = React.createClass({displayName: 'exports',
   loadFromStorage: function () {
     chrome.storage.local.get({
       'configLastFetch': null,
-      'config': null,
-      'panelOrder': null,
-      'customLinks': null
+      'config': null
     }, function(local_items) {
       Store.emit('storageLoaded', local_items);
     });
@@ -19936,8 +19899,7 @@ module.exports = React.createClass({displayName: 'exports',
           header: this.state.config.header, 
           search: this.state.config.search}), 
         PanelList({
-          panels: this.state.config.panels, 
-          panelOrder: this.state.panelOrder})
+          panels: this.state.config.panels})
       )
     );
   }
@@ -20211,13 +20173,27 @@ module.exports = React.createClass({displayName: 'exports',
 },{"react/addons":1}],174:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 var Panel = require('./panel.jsx');
-var Store = require('./store.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
+
+function getPanelOrderState() {
+  return {
+    panelOrder: UserOptionsStore.getPanelOrder()
+  }
+}
 
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
-    return {
+    return _.extend({
       dragging: null
-    };
+    }, getPanelOrderState());
+  },
+
+  _onUserOptionsChange: function () {
+    this.setState(getPanelOrderState());
+  },
+
+  componentDidMount: function () {
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
   },
 
   /**
@@ -20241,8 +20217,8 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   swapPanelOrder: function(srcId, destId) {
-    var panelOrder = this.props.panelOrder;
-    if (!panelOrder) {
+    var panelOrder = this.state.panelOrder;
+    if (!panelOrder || panelOrder.length < this.props.panels.length) {
       panelOrder = _.pluck(this.props.panels, 'id');
     }
 
@@ -20259,19 +20235,19 @@ module.exports = React.createClass({displayName: 'exports',
       return;
     }
 
-    tmp = panelOrder[srcIndex];
+    var tmp = panelOrder[srcIndex];
     panelOrder[srcIndex] = panelOrder[destIndex];
     panelOrder[destIndex] = tmp;
 
-    Store.emit('panelReorder', panelOrder);
+    UserOptionsStore.setPanelOrder(panelOrder);
   },
 
   getSortedPanels: function() {
     var indexedPanels = _.indexBy(this.props.panels, 'id');
     var sortedPanels = [];
 
-    if (this.props.panelOrder) {
-      _.each(this.props.panelOrder, function(panelId) {
+    if (this.state.panelOrder) {
+      _.each(this.state.panelOrder, function(panelId) {
         if (_.has(indexedPanels, panelId)) {
           sortedPanels.push(indexedPanels[panelId]);
           delete indexedPanels[panelId]
@@ -20304,7 +20280,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 
-},{"./panel.jsx":172,"./store.jsx":175,"react/addons":1}],175:[function(require,module,exports){
+},{"./panel.jsx":172,"./stores/useroptions.jsx":179,"react/addons":1}],175:[function(require,module,exports){
 /** @jsx React.DOM */var ee = require('event-emitter');
 
 var Store = ee({});
