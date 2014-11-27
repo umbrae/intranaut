@@ -19775,6 +19775,7 @@ module.exports = React.createClass({displayName: 'exports',
   _onDataURLChange: function() {
     var newState = getDataURLState();
 
+    // If we've updated our dataURL from one url to another, refresh our config.
     // Todo: This feels a little bit like the wrong place. Should it be in ConfigStore?
     if (this.state.dataURL && this.state.dataURL != newState.dataURL) {
       ConfigStore.loadFromDataURL();
@@ -19805,11 +19806,11 @@ module.exports = React.createClass({displayName: 'exports',
     var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
 
     if (this.props.isOptions) {
-      return Options({dataURL: this.state.dataURL, customLinks: this.state.customLinks});
+      return Options(null);
     }
 
-    if (this.props.isOptions || firstRun) {
-      return ZeroState({dataURL: this.state.dataURL});
+    if (firstRun) {
+      return ZeroState(null);
     }
 
     return (
@@ -19817,8 +19818,7 @@ module.exports = React.createClass({displayName: 'exports',
         NavBar({
           header: this.state.config.header, 
           search: this.state.config.search}), 
-        PanelList({
-          panels: this.state.config.panels})
+        PanelList(null)
       )
     );
   }
@@ -19886,6 +19886,7 @@ module.exports = React.createClass({displayName: 'exports',
 /** @jsx React.DOM */var React = require('react/addons');
 var Store = require('./store.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
 
 var CustomLinkInput = React.createClass({displayName: 'CustomLinkInput',
   mixins: [React.addons.LinkedStateMixin],
@@ -19923,7 +19924,7 @@ module.exports = React.createClass({displayName: 'exports',
       status: false,
       currentDataURL: DataURLStore.getDataURL(),
       customPanelName: "",
-      customLinks: this.props.customLinks
+      customLinks: UserOptionsStore.getCustomLinks()
     }
   },
 
@@ -19935,12 +19936,6 @@ module.exports = React.createClass({displayName: 'exports',
 
   componentDidMount: function () {
     DataURLStore.addChangeListener(this._onDataURLChange);
-  },
-
-  componentWillReceiveProps: function (nextProps) {
-    this.setState({
-      customLinks: nextProps.customLinks
-    })
   },
 
   handleSubmit: function(e) {
@@ -20010,7 +20005,7 @@ module.exports = React.createClass({displayName: 'exports',
 });
 
 
-},{"./store.jsx":175,"./stores/dataurl.jsx":178,"react/addons":1}],172:[function(require,module,exports){
+},{"./store.jsx":175,"./stores/dataurl.jsx":178,"./stores/useroptions.jsx":179,"react/addons":1}],172:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 
 var PanelItem = require('./panel_item.jsx');
@@ -20090,29 +20085,32 @@ module.exports = React.createClass({displayName: 'exports',
 },{"react/addons":1}],174:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
 var Panel = require('./panel.jsx');
+var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
-function getPanelOrderState() {
+function getPanelState() {
   return {
+    panels: ConfigStore.getConfig().panels,
     panelOrder: UserOptionsStore.getPanelOrder()
-  }
+  };
 }
 
 module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return _.extend({
       dragging: null
-    }, getPanelOrderState());
+    }, getPanelState());
   },
 
-  _onUserOptionsChange: function () {
+  _onPanelChange: function () {
     if (this.isMounted()) {
-      this.setState(getPanelOrderState());
+      this.setState(getPanelState());
     }
   },
 
   componentDidMount: function () {
-    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+    UserOptionsStore.addChangeListener(this._onPanelChange);
+    ConfigStore.addChangeListener(this._onPanelChange);
   },
 
   /**
@@ -20137,8 +20135,8 @@ module.exports = React.createClass({displayName: 'exports',
 
   swapPanelOrder: function(srcId, destId) {
     var panelOrder = this.state.panelOrder;
-    if (!panelOrder || panelOrder.length < this.props.panels.length) {
-      panelOrder = _.pluck(this.props.panels, 'id');
+    if (!panelOrder || panelOrder.length < this.state.panels.length) {
+      panelOrder = _.pluck(this.state.panels, 'id');
     }
 
     var srcIndex = _.indexOf(panelOrder, srcId);
@@ -20162,7 +20160,7 @@ module.exports = React.createClass({displayName: 'exports',
   },
 
   getSortedPanels: function() {
-    var indexedPanels = _.indexBy(this.props.panels, 'id');
+    var indexedPanels = _.indexBy(this.state.panels, 'id');
     var sortedPanels = [];
 
     if (this.state.panelOrder) {
@@ -20199,7 +20197,7 @@ module.exports = React.createClass({displayName: 'exports',
   }
 });
 
-},{"./panel.jsx":172,"./stores/useroptions.jsx":179,"react/addons":1}],175:[function(require,module,exports){
+},{"./panel.jsx":172,"./stores/config.jsx":177,"./stores/useroptions.jsx":179,"react/addons":1}],175:[function(require,module,exports){
 /** @jsx React.DOM */var ee = require('event-emitter');
 
 var Store = ee({});
@@ -20222,8 +20220,6 @@ var BaseStore = assign({}, EventEmitter.prototype, {
     this.removeListener('change', cb);
   }
 });
-
-console.log(BaseStore);
 
 module.exports = BaseStore;
 },{"events":150,"object-assign":167}],177:[function(require,module,exports){
@@ -20393,11 +20389,16 @@ UserOptionsStore = assign({}, BaseStore, {
     }, function(items) {
       try {
         panelOrder = JSON.parse(items.panelOrder);
-        customLinks = JSON.parse(items.customLinks);
       } catch(e) {
         panelOrder = [];
+      }
+
+      try {
+        customLinks = JSON.parse(items.customLinks);
+      } catch(e) {
         customLinks = [];
       }
+
 
       this.emitChange();
     }.bind(this));
@@ -20407,35 +20408,39 @@ UserOptionsStore = assign({}, BaseStore, {
 module.exports = UserOptionsStore;
 },{"./base.jsx":176,"object-assign":167}],180:[function(require,module,exports){
 /** @jsx React.DOM */var React = require('react/addons')
-var Store = require('./store.jsx');
+var DataURLStore = require('./stores/dataurl.jsx');
+var ConfigStore = require('./stores/config.jsx');
 
 module.exports = React.createClass({displayName: 'exports',
+  mixins: [React.addons.LinkedStateMixin],
+
   getInitialState: function() {
     return {
       status: false,
-      currentDataURL: this.props.dataURL
+      currentDataURL: DataURLStore.getDataURL()
     }
   },
 
-  componentWillReceiveProps: function (nextProps) {
+  _onDataURLChange: function() {
     this.setState({
-      currentDataURL: nextProps.dataURL
-    })
+      currentDataURL: DataURLStore.getDataURL()
+    });
+  },
+
+  componentDidMount: function () {
+    DataURLStore.addChangeListener(this._onDataURLChange);
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-    Store.emit('dataURLChange', this.refs.data_url.getDOMNode().value)
+
+    DataURLStore.setDataURL(this.state.currentDataURL);
+    ConfigStore.loadFromDataURL();
+
     this.setState({
       status: "Saved."
     });
   }, 
-
-  handleDataURLChange: function(e) {
-    this.setState({
-      'currentDataURL': this.refs.data_url.getDOMNode().value
-    });
-  },
 
   render: function() {
     var formStatus;
@@ -20452,13 +20457,8 @@ module.exports = React.createClass({displayName: 'exports',
         React.DOM.form({role: "form", className: "welcomeForm", onSubmit: this.handleSubmit}, 
           React.DOM.div({className: "form-group"}, 
             React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
-            React.DOM.input({value: this.state.currentDataURL, onChange: this.handleDataURLChange, id: "data_url", type: "url", ref: "data_url", className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.input({type: "url", valueLink: this.linkState('currentDataURL'), className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
-          ), 
-
-          React.DOM.div({className: "form-group"}, 
-            React.DOM.label(null, React.DOM.input({type: "checkbox", onChange: this.toggleCustomPanel}), " Create a Custom Panel of Links I Specify")
-
           ), 
 
           React.DOM.p(null, 
@@ -20473,4 +20473,4 @@ module.exports = React.createClass({displayName: 'exports',
 });
 
 
-},{"./store.jsx":175,"react/addons":1}]},{},[168])
+},{"./stores/config.jsx":177,"./stores/dataurl.jsx":178,"react/addons":1}]},{},[168])

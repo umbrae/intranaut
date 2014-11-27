@@ -36,11 +36,16 @@ UserOptionsStore = assign({}, BaseStore, {
     }, function(items) {
       try {
         panelOrder = JSON.parse(items.panelOrder);
-        customLinks = JSON.parse(items.customLinks);
       } catch(e) {
         panelOrder = [];
+      }
+
+      try {
+        customLinks = JSON.parse(items.customLinks);
+      } catch(e) {
         customLinks = [];
       }
+
 
       this.emitChange();
     }.bind(this));

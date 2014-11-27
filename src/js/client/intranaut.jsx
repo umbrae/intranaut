@@ -40,6 +40,7 @@ module.exports = React.createClass({
   _onDataURLChange: function() {
     var newState = getDataURLState();
 
+    // If we've updated our dataURL from one url to another, refresh our config.
     // Todo: This feels a little bit like the wrong place. Should it be in ConfigStore?
     if (this.state.dataURL && this.state.dataURL != newState.dataURL) {
       ConfigStore.loadFromDataURL();
@@ -70,11 +71,11 @@ module.exports = React.createClass({
     var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
 
     if (this.props.isOptions) {
-      return <Options dataURL={this.state.dataURL} customLinks={this.state.customLinks} />;
+      return <Options />;
     }
 
-    if (this.props.isOptions || firstRun) {
-      return <ZeroState dataURL={this.state.dataURL} />;
+    if (firstRun) {
+      return <ZeroState />;
     }
 
     return (
@@ -82,8 +83,7 @@ module.exports = React.createClass({
         <NavBar
           header={this.state.config.header}
           search={this.state.config.search} />
-        <PanelList
-          panels={this.state.config.panels} />
+        <PanelList />
       </div>
     );
   }

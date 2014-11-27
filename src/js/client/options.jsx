@@ -1,6 +1,7 @@
 var React = require('react/addons');
 var Store = require('./store.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
 
 var CustomLinkInput = React.createClass({
   mixins: [React.addons.LinkedStateMixin],
@@ -38,7 +39,7 @@ module.exports = React.createClass({
       status: false,
       currentDataURL: DataURLStore.getDataURL(),
       customPanelName: "",
-      customLinks: this.props.customLinks
+      customLinks: UserOptionsStore.getCustomLinks()
     }
   },
 
@@ -50,12 +51,6 @@ module.exports = React.createClass({
 
   componentDidMount: function () {
     DataURLStore.addChangeListener(this._onDataURLChange);
-  },
-
-  componentWillReceiveProps: function (nextProps) {
-    this.setState({
-      customLinks: nextProps.customLinks
-    })
   },
 
   handleSubmit: function(e) {

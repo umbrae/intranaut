@@ -1,33 +1,37 @@
 var React = require('react/addons')
-var Store = require('./store.jsx');
+var DataURLStore = require('./stores/dataurl.jsx');
+var ConfigStore = require('./stores/config.jsx');
 
 module.exports = React.createClass({
+  mixins: [React.addons.LinkedStateMixin],
+
   getInitialState: function() {
     return {
       status: false,
-      currentDataURL: this.props.dataURL
+      currentDataURL: DataURLStore.getDataURL()
     }
   },
 
-  componentWillReceiveProps: function (nextProps) {
+  _onDataURLChange: function() {
     this.setState({
-      currentDataURL: nextProps.dataURL
-    })
+      currentDataURL: DataURLStore.getDataURL()
+    });
+  },
+
+  componentDidMount: function () {
+    DataURLStore.addChangeListener(this._onDataURLChange);
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-    Store.emit('dataURLChange', this.refs.data_url.getDOMNode().value)
+
+    DataURLStore.setDataURL(this.state.currentDataURL);
+    ConfigStore.loadFromDataURL();
+
     this.setState({
       status: "Saved."
     });
   }, 
-
-  handleDataURLChange: function(e) {
-    this.setState({
-      'currentDataURL': this.refs.data_url.getDOMNode().value
-    });
-  },
 
   render: function() {
     var formStatus;
@@ -44,13 +48,8 @@ module.exports = React.createClass({
         <form role="form" className="welcomeForm" onSubmit={this.handleSubmit}>
           <div className="form-group">
             <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
-            <input value={this.state.currentDataURL} onChange={this.handleDataURLChange} id="data_url" type="url" ref="data_url" className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+            <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
             <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
-          </div>
-
-          <div className="form-group">
-            <label><input type="checkbox" onChange={this.toggleCustomPanel} /> Create a Custom Panel of Links I Specify</label>
-
           </div>
 
           <p>

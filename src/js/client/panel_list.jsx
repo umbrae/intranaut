@@ -1,28 +1,31 @@
 var React = require('react/addons')
 var Panel = require('./panel.jsx');
+var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
-function getPanelOrderState() {
+function getPanelState() {
   return {
+    panels: ConfigStore.getConfig().panels,
     panelOrder: UserOptionsStore.getPanelOrder()
-  }
+  };
 }
 
 module.exports = React.createClass({
   getInitialState: function() {
     return _.extend({
       dragging: null
-    }, getPanelOrderState());
+    }, getPanelState());
   },
 
-  _onUserOptionsChange: function () {
+  _onPanelChange: function () {
     if (this.isMounted()) {
-      this.setState(getPanelOrderState());
+      this.setState(getPanelState());
     }
   },
 
   componentDidMount: function () {
-    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+    UserOptionsStore.addChangeListener(this._onPanelChange);
+    ConfigStore.addChangeListener(this._onPanelChange);
   },
 
   /**
@@ -47,8 +50,8 @@ module.exports = React.createClass({
 
   swapPanelOrder: function(srcId, destId) {
     var panelOrder = this.state.panelOrder;
-    if (!panelOrder || panelOrder.length < this.props.panels.length) {
-      panelOrder = _.pluck(this.props.panels, 'id');
+    if (!panelOrder || panelOrder.length < this.state.panels.length) {
+      panelOrder = _.pluck(this.state.panels, 'id');
     }
 
     var srcIndex = _.indexOf(panelOrder, srcId);
@@ -72,7 +75,7 @@ module.exports = React.createClass({
   },
 
   getSortedPanels: function() {
-    var indexedPanels = _.indexBy(this.props.panels, 'id');
+    var indexedPanels = _.indexBy(this.state.panels, 'id');
     var sortedPanels = [];
 
     if (this.state.panelOrder) {

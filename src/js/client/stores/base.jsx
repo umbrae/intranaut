@@ -15,6 +15,4 @@ var BaseStore = assign({}, EventEmitter.prototype, {
   }
 });
 
-console.log(BaseStore);
-
 module.exports = BaseStore;
