@@ -19921,7 +19921,7 @@ module.exports = React.createClass({displayName: 'exports',
   getInitialState: function() {
     return {
       status: false,
-      dataURL: DataURLStore.getDataURL(),
+      currentDataURL: DataURLStore.getDataURL(),
       customPanelName: "",
       customLinks: this.props.customLinks
     }
@@ -19929,7 +19929,7 @@ module.exports = React.createClass({displayName: 'exports',
 
   _onDataURLChange: function() {
     this.setState({
-      dataURL: DataURLStore.getDataURL()
+      currentDataURL: DataURLStore.getDataURL()
     });
   },
 
@@ -19946,6 +19946,8 @@ module.exports = React.createClass({displayName: 'exports',
   handleSubmit: function(e) {
     e.preventDefault();
 
+    DataURLStore.setDataURL(this.state.currentDataURL);
+
     var customLinkContents = []
     _.each(this.refs, function(ref, name) {
       if (name.indexOf('customLink') === 0) {
@@ -19958,10 +19960,6 @@ module.exports = React.createClass({displayName: 'exports',
     this.setState({
       status: "Saved."
     });
-  },
-
-  handleDataURL: function(e) {
-    DataURLStore.setDataURL(e.target.value);
   },
 
   render: function() {
@@ -19991,7 +19989,7 @@ module.exports = React.createClass({displayName: 'exports',
           React.DOM.div({className: "form-group"}, 
             React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
             
-            React.DOM.input({type: "url", value: this.state.dataURL, onChange: this.handleDataURL, className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
+            React.DOM.input({type: "url", valueLink: this.linkState('currentDataURL'), className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 
@@ -20243,9 +20241,7 @@ var DEFAULT_CONFIG_TEMPLATE = {
 }
 
 var config = DEFAULT_CONFIG_TEMPLATE;
-
 var lastFetch = null;
-
 var loaded = false;
 
 function now() {
@@ -20287,8 +20283,6 @@ ConfigStore = assign({}, BaseStore, {
     }, function(items) {
       loaded = true;
 
-      console.log(items);
-
       try {
         config = JSON.parse(items.config);
         lastFetch = items.configLastFetch;
@@ -20298,8 +20292,6 @@ ConfigStore = assign({}, BaseStore, {
       }
 
       if (_.isEmpty(config.panels) || (now() - lastFetch) > REFRESH_TIME) {
-        console.log(config);
-        console.log(now() - lastFetch);
         this.loadFromDataURL();
       }
 

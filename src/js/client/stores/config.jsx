@@ -12,9 +12,7 @@ var DEFAULT_CONFIG_TEMPLATE = {
 }
 
 var config = DEFAULT_CONFIG_TEMPLATE;
-
 var lastFetch = null;
-
 var loaded = false;
 
 function now() {
