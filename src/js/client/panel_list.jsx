@@ -1,12 +1,26 @@
 var React = require('react/addons')
 var Panel = require('./panel.jsx');
-var Store = require('./store.jsx');
+var UserOptionsStore = require('./stores/useroptions.jsx');
+
+function getPanelOrderState() {
+  return {
+    panelOrder: UserOptionsStore.getPanelOrder()
+  }
+}
 
 module.exports = React.createClass({
   getInitialState: function() {
-    return {
+    return _.extend({
       dragging: null
-    };
+    }, getPanelOrderState());
+  },
+
+  _onUserOptionsChange: function () {
+    this.setState(getPanelOrderState());
+  },
+
+  componentDidMount: function () {
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
   },
 
   /**
@@ -30,8 +44,8 @@ module.exports = React.createClass({
   },
 
   swapPanelOrder: function(srcId, destId) {
-    var panelOrder = this.props.panelOrder;
-    if (!panelOrder) {
+    var panelOrder = this.state.panelOrder;
+    if (!panelOrder || panelOrder.length < this.props.panels.length) {
       panelOrder = _.pluck(this.props.panels, 'id');
     }
 
@@ -48,19 +62,19 @@ module.exports = React.createClass({
       return;
     }
 
-    tmp = panelOrder[srcIndex];
+    var tmp = panelOrder[srcIndex];
     panelOrder[srcIndex] = panelOrder[destIndex];
     panelOrder[destIndex] = tmp;
 
-    Store.emit('panelReorder', panelOrder);
+    UserOptionsStore.setPanelOrder(panelOrder);
   },
 
   getSortedPanels: function() {
     var indexedPanels = _.indexBy(this.props.panels, 'id');
     var sortedPanels = [];
 
-    if (this.props.panelOrder) {
-      _.each(this.props.panelOrder, function(panelId) {
+    if (this.state.panelOrder) {
+      _.each(this.state.panelOrder, function(panelId) {
         if (_.has(indexedPanels, panelId)) {
           sortedPanels.push(indexedPanels[panelId]);
           delete indexedPanels[panelId]

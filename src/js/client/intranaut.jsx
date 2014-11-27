@@ -26,7 +26,6 @@ function getConfigState() {
 
 function getUserOptionsState() {
   return {
-    "panelOrder": UserOptionsStore.getPanelOrder(),
     "customLinks": UserOptionsStore.getCustomLinks()
   };
 }
@@ -44,44 +43,10 @@ module.exports = React.createClass({
 
   addListeners: function() {
     Store.on('storageLoaded', function(items) {
-      var config;
-      var state = {
-        configLastFetch: items.configLastFetch
-      };
-
-      if (items.config) {
-        try {
-          config = JSON.parse(items.config);
-          state['config'] = config;
-        } catch(e) {
-          state.configLastFetch = null;
-          config = null;
-        }
-      }
-
-      if (items.panelOrder) {
-        state['panelOrder'] = JSON.parse(items.panelOrder);
-      }
-
-      if (items.customLinks) {
-        state['customLinks'] = JSON.parse(items.customLinks);
-      }
-
-      this.setState(state);
-
-      if (!config || (now() - state.configLastFetch) > REFRESH_TIME) {
+      if (!items.config || (now() - this.state.configLastFetch) > REFRESH_TIME) {
         this.syncConfig();
       }
     }.bind(this));
-
-    Store.on('panelReorder', function(newPanelOrder) {
-      this.setState({
-        panelOrder: newPanelOrder
-      });
-      chrome.storage.local.set({
-        panelOrder: JSON.stringify(newPanelOrder)
-      });
-    }.bind(this))
 
     Store.on('customLinksChange', function(customLinks) {
       this.setState({
@@ -108,9 +73,7 @@ module.exports = React.createClass({
   loadFromStorage: function () {
     chrome.storage.local.get({
       'configLastFetch': null,
-      'config': null,
-      'panelOrder': null,
-      'customLinks': null
+      'config': null
     }, function(local_items) {
       Store.emit('storageLoaded', local_items);
     });
@@ -201,8 +164,7 @@ module.exports = React.createClass({
           header={this.state.config.header}
           search={this.state.config.search} />
         <PanelList
-          panels={this.state.config.panels}
-          panelOrder={this.state.panelOrder} />
+          panels={this.state.config.panels} />
       </div>
     );
   }
