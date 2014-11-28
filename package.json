@@ -1,0 +1,37 @@
+{
+  "name": "intranaut",
+  "version": "0.0.2",
+  "description": "Chrome extension that provides an instant intranet for any organization.",
+  "devDependencies": {
+    "watchify": "~0.6.1",
+    "browserify": "~3.30.0",
+    "nodeunit": "~0.8.5",
+    "q": "~1.0.0",
+    "jshint": "~2.4.3",
+    "reactify": "~0.8.1",
+    "event-emitter": "~0.3.1"
+  },
+  "scripts": {
+    "jshint": "./node_modules/.bin/jshint src/js/**/*.js*",
+    "watch": "./scripts/watch.sh",
+    "build": "./scripts/build.sh",
+    "release": "./scripts/release.sh",
+    "package": "npm run jshint && npm test && npm run build && zip package-$(cat package.json | jq -r .version).zip -r build manifest.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/umbrae/intranaut.git"
+  },
+  "keywords": [
+    "chrome",
+    "extension",
+    "tabs",
+    "intranet"
+  ],
+  "author": "Chris Dary <umbrae@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/umbrae/intranaut/issues"
+  },
+  "homepage": "https://github.com/umbrae/intranaut"
+}

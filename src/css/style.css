@@ -1,0 +1,43 @@
+.navbar {
+  background-color: #cee3f8;
+  border-bottom: 2px solid #5f99cf;
+}
+
+.navbar .navbar-header {
+  margin-left: 15px;
+}
+
+.navbar-brand {
+  padding: 5px;
+}
+
+.navbar-brand img.logo {
+  max-height: 40px;
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+}
+
+.navbar-brand-name {
+  line-height: 40px;
+}
+
+.panel-heading {
+  cursor: move;
+}
+
+.panel-heading .glyphicon {
+  opacity: 0.5;
+}
+
+.panel-heading:hover .glyphicon {
+  opacity: 1;
+}
+
+.over {
+  opacity: 0.5;
+}
+
+.welcomeForm {
+  margin-top: 15%;
+}

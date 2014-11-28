@@ -1,14 +1,18 @@
 {
-  "name": "SnooTab",
-  "description": "What's SnooTab? Not much, what's SnooTab with you?",
-  "version": "0.1",
-  "incognito": "split",
-  "options_page": "options.html",
-  "chrome_url_overrides": {
-    "newtab": "tab.html"
-  },
+  "manifest_version": 2,
+  "name": "Intranaut",
+  "short_name": "Intranaut",
+  "description": "An instant intranet.",
+  "version": "0.2.1",
+  "author": "Chris Dary <umbrae@gmail.com>",
+  "icons": { "16": "build/img/icon16.png",
+           "48": "build/img/icon48.png",
+          "128": "build/img/icon128.png" },
   "permissions": [
     "storage"
   ],
-  "manifest_version": 2
+  "chrome_url_overrides": {
+    "newtab": "build/html/tab.html"
+  },
+  "options_page": "build/html/options.html"
 }

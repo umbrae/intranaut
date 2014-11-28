@@ -33,3 +33,11 @@
 .panel-heading:hover .glyphicon {
   opacity: 1;
 }
+
+.over {
+  opacity: 0.5;
+}
+
+.welcomeForm {
+  margin-top: 15%;
+}
