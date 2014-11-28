@@ -43,7 +43,7 @@ module.exports = React.createClass({
             <span className="pull-right glyphicon glyphicon-th"></span>
           </div>
           <div className="list-group">
-            {this.props.contents.map(function(panelItem, i) {
+            {_.map(this.props.contents, function(panelItem, i) {
               panelItem.key = panelItem.name;
               return PanelItem(panelItem);
             }.bind(this))}

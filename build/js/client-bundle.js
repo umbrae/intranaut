@@ -19888,32 +19888,87 @@ var Store = require('./store.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
-var CustomLinkInput = React.createClass({displayName: 'CustomLinkInput',
+function getUserOptionsState() {
+  return {
+    "links": UserOptionsStore.getCustomLinks()
+  };
+}
+
+var CustomLinks = React.createClass({displayName: 'CustomLinks',
   mixins: [React.addons.LinkedStateMixin],
 
   getInitialState: function() {
     return {
-      name: this.props.name,
-      url: this.props.url
+      name: "",
+      links: UserOptionsStore.getCustomLinks()
     }
   },
 
-  componentWillReceiveProps: function (nextProps) {
-    this.setState({
-      name: nextProps.name,
-      url: nextProps.url
-    })
+  _onUserOptionsChange: function() {
+    this.setState(getUserOptionsState());
+  },
+
+  /**
+   * Fetch our config from localstorage, and render it. If we have no config yet,
+   * fetch it first. If we have a config but it's out of date, refresh in the background.
+  **/
+  componentDidMount: function () {
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+  },
+
+  handleLinkUpdate: function(e) {
+    var newLinks = [];
+
+    // Gheetttooooooo
+    var i = 0;
+    while (typeof this.refs[i + ":name"] !== "undefined") {
+      var link = {
+        "name": this.refs[i + ':name'].getDOMNode().value,
+        "url": this.refs[i + ':url'].getDOMNode().value
+      }
+
+      if (link.name || link.url) {
+        newLinks.push(link);
+      }
+
+      i++;
+    }
+
+    UserOptionsStore.setCustomLinks(newLinks);
+  },
+
+  _linkFragment: function(name, url, i) {
+    return React.DOM.tr({className: "form-group row", key: i}, 
+      React.DOM.td({className: "col-md-4"}, React.DOM.input({type: "text", ref: i + ":name", value: name, onChange: this.handleLinkUpdate, className: "form-control", placeholder: "name"})), 
+      React.DOM.td({className: "col-md-8"}, React.DOM.input({type: "text", ref: i + ":url", value: url, onChange: this.handleLinkUpdate, className: "form-control", placeholder: "url"}))
+    )
   },
 
   render: function() {
-    return (
-      React.DOM.div({className: "form-group row"}, 
-        React.DOM.div({className: "col-md-4"}, React.DOM.input({type: "text", valueLink: this.linkState('name'), className: "form-control", placeholder: "name"})), 
-        React.DOM.div({className: "col-md-6"}, React.DOM.input({type: "text", valueLink: this.linkState('url'), className: "form-control", placeholder: "url"}))
+    linkInputs = this.state.links.map(function(link, i) {
+      return this._linkFragment(link.name, link.url, i);
+    }.bind(this));
+    linkInputs.push(this._linkFragment("", "", linkInputs.length));
+
+    return (React.DOM.fieldset(null, 
+        React.DOM.legend(null, "Custom Links"), 
+        React.DOM.p(null, "Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you."), 
+
+        React.DOM.table({className: "table table-striped"}, 
+          React.DOM.thead(null, 
+            React.DOM.tr({className: "form-group row"}, 
+              React.DOM.th({className: "col-md-4"}, "Link Name"), 
+              React.DOM.th({className: "col-md-8"}, "Link URL")
+            )
+          ), 
+          React.DOM.tbody(null, 
+            linkInputs
+          )
+        )
       )
     );
   }
-});
+})
 
 
 module.exports = React.createClass({displayName: 'exports',
@@ -19963,17 +20018,6 @@ module.exports = React.createClass({displayName: 'exports',
       formStatus = React.DOM.div({className: "alert alert-success"}, this.state.status)
     }
 
-    // Total hax. Rebuild this entirely when we have our new data model with non-fake Store and model.
-    linkInputs = this.state.customLinks.map(function(link, i) {
-      return (
-        CustomLinkInput({name: link.name, url: link.url, ref: "customLink_" + i, key: i})
-      );
-    });
-
-    _.times(5 - linkInputs.length, function() {
-      linkInputs.push(CustomLinkInput({name: "", url: "", ref: "customLink_" + linkInputs.length, key: linkInputs.length}));
-    });
-
     return (
       React.DOM.section({className: "options col-md-8 col-md-push-2"}, 
         React.DOM.header(null, 
@@ -19988,10 +20032,7 @@ module.exports = React.createClass({displayName: 'exports',
             React.DOM.p({className: "help-block"}, React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
           ), 
 
-          React.DOM.div({className: "form-group"}, 
-            React.DOM.h3(null, "Custom Panel"), 
-            linkInputs
-          ), 
+          CustomLinks(null), 
 
           React.DOM.p(null, 
             React.DOM.button({type: "submit", className: "btn btn-primary btn-lg"}, "Initialize")
@@ -20051,7 +20092,7 @@ module.exports = React.createClass({displayName: 'exports',
             React.DOM.span({className: "pull-right glyphicon glyphicon-th"})
           ), 
           React.DOM.div({className: "list-group"}, 
-            this.props.contents.map(function(panelItem, i) {
+            _.map(this.props.contents, function(panelItem, i) {
               panelItem.key = panelItem.name;
               return PanelItem(panelItem);
             }.bind(this))
@@ -20089,8 +20130,19 @@ var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
 function getPanelState() {
+  var panels = ConfigStore.getConfig().panels,
+    customLinks = UserOptionsStore.getCustomLinks();
+
+  if (customLinks && customLinks.length > 0) {
+    panels.push({
+          id: "intranaut-custom",
+          name: "My Links",
+          contents: customLinks
+    })
+  }
+
   return {
-    panels: ConfigStore.getConfig().panels,
+    panels: panels,
     panelOrder: UserOptionsStore.getPanelOrder()
   };
 }

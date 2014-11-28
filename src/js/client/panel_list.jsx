@@ -4,8 +4,19 @@ var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
 function getPanelState() {
+  var panels = ConfigStore.getConfig().panels,
+    customLinks = UserOptionsStore.getCustomLinks();
+
+  if (customLinks && customLinks.length > 0) {
+    panels.push({
+          id: "intranaut-custom",
+          name: "My Links",
+          contents: customLinks
+    })
+  }
+
   return {
-    panels: ConfigStore.getConfig().panels,
+    panels: panels,
     panelOrder: UserOptionsStore.getPanelOrder()
   };
 }

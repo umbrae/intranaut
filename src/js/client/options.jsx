@@ -3,32 +3,87 @@ var Store = require('./store.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
-var CustomLinkInput = React.createClass({
+function getUserOptionsState() {
+  return {
+    "links": UserOptionsStore.getCustomLinks()
+  };
+}
+
+var CustomLinks = React.createClass({
   mixins: [React.addons.LinkedStateMixin],
 
   getInitialState: function() {
     return {
-      name: this.props.name,
-      url: this.props.url
+      name: "",
+      links: UserOptionsStore.getCustomLinks()
     }
   },
 
-  componentWillReceiveProps: function (nextProps) {
-    this.setState({
-      name: nextProps.name,
-      url: nextProps.url
-    })
+  _onUserOptionsChange: function() {
+    this.setState(getUserOptionsState());
+  },
+
+  /**
+   * Fetch our config from localstorage, and render it. If we have no config yet,
+   * fetch it first. If we have a config but it's out of date, refresh in the background.
+  **/
+  componentDidMount: function () {
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+  },
+
+  handleLinkUpdate: function(e) {
+    var newLinks = [];
+
+    // Gheetttooooooo
+    var i = 0;
+    while (typeof this.refs[i + ":name"] !== "undefined") {
+      var link = {
+        "name": this.refs[i + ':name'].getDOMNode().value,
+        "url": this.refs[i + ':url'].getDOMNode().value
+      }
+
+      if (link.name || link.url) {
+        newLinks.push(link);
+      }
+
+      i++;
+    }
+
+    UserOptionsStore.setCustomLinks(newLinks);
+  },
+
+  _linkFragment: function(name, url, i) {
+    return <tr className="form-group row" key={i}>
+      <td className="col-md-4"><input type="text" ref={i + ":name"} value={name} onChange={this.handleLinkUpdate} className="form-control" placeholder="name" /></td>
+      <td className="col-md-8"><input type="text" ref={i + ":url"} value={url} onChange={this.handleLinkUpdate} className="form-control" placeholder="url" /></td>
+    </tr>
   },
 
   render: function() {
-    return (
-      <div className="form-group row">
-        <div className="col-md-4"><input type="text" valueLink={this.linkState('name')} className="form-control" placeholder="name" /></div>
-        <div className="col-md-6"><input type="text" valueLink={this.linkState('url')} className="form-control" placeholder="url" /></div>
-      </div>
+    linkInputs = this.state.links.map(function(link, i) {
+      return this._linkFragment(link.name, link.url, i);
+    }.bind(this));
+    linkInputs.push(this._linkFragment("", "", linkInputs.length));
+
+    return (<fieldset>
+        <legend>Custom Links</legend>
+        <p>Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you.</p>
+
+        <table className="table table-striped">
+          <thead>
+            <tr className="form-group row">
+              <th className="col-md-4">Link Name</th>
+              <th className="col-md-8">Link URL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linkInputs}
+          </tbody>
+        </table>
+      </fieldset>
     );
   }
-});
+})
 
 
 module.exports = React.createClass({
@@ -78,17 +133,6 @@ module.exports = React.createClass({
       formStatus = <div className="alert alert-success">{this.state.status}</div>
     }
 
-    // Total hax. Rebuild this entirely when we have our new data model with non-fake Store and model.
-    linkInputs = this.state.customLinks.map(function(link, i) {
-      return (
-        <CustomLinkInput name={link.name} url={link.url} ref={"customLink_" + i} key={i} />
-      );
-    });
-
-    _.times(5 - linkInputs.length, function() {
-      linkInputs.push(<CustomLinkInput name="" url="" ref={"customLink_" + linkInputs.length} key={linkInputs.length} />);
-    });
-
     return (
       <section className="options col-md-8 col-md-push-2">
         <header>
@@ -103,10 +147,7 @@ module.exports = React.createClass({
             <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
           </div>
 
-          <div className="form-group">
-            <h3>Custom Panel</h3>
-            {linkInputs}
-          </div>
+          <CustomLinks />
 
           <p>
             <button type="submit" className="btn btn-primary btn-lg">Initialize</button>
