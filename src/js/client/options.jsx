@@ -5,17 +5,19 @@ var UserOptionsStore = require('./stores/useroptions.jsx');
 
 function getUserOptionsState() {
   return {
-    "links": UserOptionsStore.getCustomLinks()
+    hiddenPanels: UserOptionsStore.getHiddenPanels(),
+    customLinks: UserOptionsStore.getCustomLinks()
   };
 }
 
+// Todo: All these classes seem to rely on the same state. Should they be merged? Subclass?
 var CustomLinks = React.createClass({
   mixins: [React.addons.LinkedStateMixin],
 
   getInitialState: function() {
     return {
       name: "",
-      links: UserOptionsStore.getCustomLinks()
+      customLinks: UserOptionsStore.getCustomLinks()
     }
   },
 
@@ -23,10 +25,6 @@ var CustomLinks = React.createClass({
     this.setState(getUserOptionsState());
   },
 
-  /**
-   * Fetch our config from localstorage, and render it. If we have no config yet,
-   * fetch it first. If we have a config but it's out of date, refresh in the background.
-  **/
   componentDidMount: function () {
     UserOptionsStore.addChangeListener(this._onUserOptionsChange);
   },
@@ -34,7 +32,7 @@ var CustomLinks = React.createClass({
   handleLinkUpdate: function(e) {
     var newLinks = [];
 
-    // Gheetttooooooo
+    // Ghetto grouping of related inputs.
     var i = 0;
     while (typeof this.refs[i + ":name"] !== "undefined") {
       var link = {
@@ -60,7 +58,7 @@ var CustomLinks = React.createClass({
   },
 
   render: function() {
-    linkInputs = this.state.links.map(function(link, i) {
+    linkInputs = this.state.customLinks.map(function(link, i) {
       return this._linkFragment(link.name, link.url, i);
     }.bind(this));
     linkInputs.push(this._linkFragment("", "", linkInputs.length));
@@ -85,6 +83,72 @@ var CustomLinks = React.createClass({
   }
 })
 
+var HiddenPanels = React.createClass({
+  mixins: [React.addons.LinkedStateMixin],
+
+  getInitialState: function() {
+    return {
+      panels: ConfigStore.getConfig().panels,
+      hiddenPanels: UserOptionsStore.getHiddenPanels()
+    }
+  },
+
+  _onConfigChange: function() {
+    this.setState({
+      panels: ConfigStore.getConfig().panels
+    });
+  },
+
+  _onUserOptionsChange: function() {
+    this.setState(getUserOptionsState());
+  },
+
+  componentDidMount: function() {
+    ConfigStore.addChangeListener(this._onConfigChange);
+    UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+  },
+
+  handleUpdateHiddenPanels: function(e) {
+    var hiddenPanels = _.map(_.filter(this.refs, function(node) {
+      return node.getDOMNode().checked;
+    }), function(node) {
+      return node.getDOMNode().value;
+    })
+
+    UserOptionsStore.setHiddenPanels(hiddenPanels);
+  },
+
+  render: function() {
+    return (<fieldset>
+        <legend>Hidden Panels</legend>
+
+        <table className="table table-striped">
+          <thead>
+            <tr className="form-group row">
+              <th className="col-md-4">Panel</th>
+              <th className="col-md-8">Hidden</th>
+            </tr>
+          </thead>
+          <tbody>
+            {this.state.panels.map(function(panel, i) {
+              if (_.contains(this.state.hiddenPanels, panel.id)) {
+                return <tr className="form-group row" key={i}>
+                  <td className="col-md-4">{panel.name}</td>
+                  <td className="col-md-8"><input type="checkbox" ref={panel.id} value={panel.id} checked="checked" onChange={this.handleUpdateHiddenPanels} /></td>
+                </tr>
+              } else {
+                return <tr className="form-group row" key={i}>
+                  <td className="col-md-4">{panel.name}</td>
+                  <td className="col-md-8"><input type="checkbox" ref={panel.id} value={panel.id} onChange={this.handleUpdateHiddenPanels} /></td>
+                </tr>
+              }
+            }.bind(this))}
+          </tbody>
+        </table>
+      </fieldset>
+    );
+  }
+})
 
 module.exports = React.createClass({
   mixins: [React.addons.LinkedStateMixin],
@@ -149,8 +213,10 @@ module.exports = React.createClass({
 
           <CustomLinks />
 
+          <HiddenPanels />
+
           <p>
-            <button type="submit" className="btn btn-primary btn-lg">Initialize</button>
+            <button type="submit" className="btn btn-primary btn-lg">Save Changes</button>
           </p>
 
           {formStatus}

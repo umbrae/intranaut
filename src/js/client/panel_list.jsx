@@ -5,7 +5,8 @@ var UserOptionsStore = require('./stores/useroptions.jsx');
 
 function getPanelState() {
   var panels = ConfigStore.getConfig().panels,
-    customLinks = UserOptionsStore.getCustomLinks();
+    customLinks = UserOptionsStore.getCustomLinks(),
+    hiddenPanels = UserOptionsStore.getHiddenPanels();
 
   if (customLinks && customLinks.length > 0) {
     panels.push({
@@ -14,6 +15,10 @@ function getPanelState() {
           contents: customLinks
     })
   }
+
+  panels = _.reject(panels, function(panel) {
+    return _.contains(hiddenPanels, panel.id)
+  });
 
   return {
     panels: panels,
@@ -100,6 +105,7 @@ module.exports = React.createClass({
     } else {
       sortedPanels = _.values(indexedPanels);
     }
+
 
     return sortedPanels;
   },
