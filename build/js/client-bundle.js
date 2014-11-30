@@ -20095,7 +20095,7 @@ module.exports = React.createClass({displayName: 'exports',
     return (
       React.DOM.section({className: "options col-md-8 col-md-push-2"}, 
         React.DOM.header(null, 
-          React.DOM.h1(null, "Intranaut")
+          React.DOM.a({href: "/build/html/tab.html"}, React.DOM.h1(null, "Intranaut"))
         ), 
         React.DOM.hr(null), 
         React.DOM.form({role: "form", className: "optionsForm", onSubmit: this.handleSubmit}, 

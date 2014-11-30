@@ -209,7 +209,7 @@ module.exports = React.createClass({
     return (
       <section className="options col-md-8 col-md-push-2">
         <header>
-          <h1>Intranaut</h1>
+          <a href="/build/html/tab.html"><h1>Intranaut</h1></a>
         </header>
         <hr />
         <form role="form" className="optionsForm" onSubmit={this.handleSubmit}>

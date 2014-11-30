@@ -60,3 +60,12 @@
   height: 20px;
   display: inline-block;
 }
+
+.options header h1 {
+  background: transparent url(/build/img/icon128.png) center left no-repeat;
+  background-size: 48px;
+  padding-left: 52px;
+  line-height: 52px;
+  vertical-align: middle;
+  color: -text-color;
+}
