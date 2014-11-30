@@ -223,7 +223,11 @@ module.exports = React.createClass({
             </div>
           </div>
 
+          <hr />
+
           <CustomLinks />
+
+          <hr />
 
           <HiddenPanels />
 

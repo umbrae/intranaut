@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
-./node_modules/.bin/browserify -t reactify -o build/js/client-bundle.js src/js/client.jsx
-cp -rp src/css/ build/css/
-cp -rp src/html/ build/html/
+mkdir -p build/{css,html,img,vendor,js/vendor}
+
+./node_modules/.bin/browserify -t reactify src/js/client.jsx | ./node_modules/.bin/uglifyjs > build/js/client-bundle.js
+cp -rp src/css/* build/css/
+cp -rp src/html/* build/html/
+cp -rp src/img/* build/img/
+cp -rp src/vendor/* build/vendor/
+cp -rp src/js/vendor/* build/js/vendor
