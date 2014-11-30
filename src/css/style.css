@@ -41,3 +41,22 @@
 .welcomeForm {
   margin-top: 15%;
 }
+
+.hiddenPanels label {
+  font-weight: normal;
+}
+
+.hiddenPanels s {
+  opacity: 0.6;
+}
+
+.configLink {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  font-size: 18px;
+  color: #888;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+}

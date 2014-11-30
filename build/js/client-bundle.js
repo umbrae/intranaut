@@ -19818,7 +19818,8 @@ module.exports = React.createClass({displayName: 'exports',
         NavBar({
           header: this.state.config.header, 
           search: this.state.config.search}), 
-        PanelList(null)
+        PanelList(null), 
+        React.DOM.a({className: "configLink", 'aria-label': "Configuration", href: "/build/html/options.html"}, React.DOM.span({className: "glyphicon glyphicon-cog"}))
       )
     );
   }
@@ -19948,19 +19949,23 @@ var CustomLinks = React.createClass({displayName: 'CustomLinks',
     }.bind(this));
     linkInputs.push(this._linkFragment("", "", linkInputs.length));
 
-    return (React.DOM.fieldset(null, 
-        React.DOM.legend(null, "Custom Links"), 
-        React.DOM.p(null, "Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you."), 
-
-        React.DOM.table({className: "table table-striped"}, 
-          React.DOM.thead(null, 
-            React.DOM.tr({className: "form-group row"}, 
-              React.DOM.th({className: "col-md-4"}, "Link Name"), 
-              React.DOM.th({className: "col-md-8"}, "Link URL")
+    return (
+      React.DOM.div({className: "form-group row"}, 
+        React.DOM.div({className: "col-md-3"}, 
+          React.DOM.strong(null, "Custom Links"), 
+          React.DOM.small({className: "help-block"}, "Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you.")
+        ), 
+        React.DOM.div({className: "col-md-9"}, 
+          React.DOM.table({className: "table table-striped"}, 
+            React.DOM.thead(null, 
+              React.DOM.tr({className: "form-group row"}, 
+                React.DOM.th({className: "col-md-4"}, "Link Name"), 
+                React.DOM.th({className: "col-md-8"}, "Link URL")
+              )
+            ), 
+            React.DOM.tbody(null, 
+              linkInputs
             )
-          ), 
-          React.DOM.tbody(null, 
-            linkInputs
           )
         )
       )
@@ -20004,30 +20009,35 @@ var HiddenPanels = React.createClass({displayName: 'HiddenPanels',
   },
 
   render: function() {
-    return (React.DOM.fieldset(null, 
-        React.DOM.legend(null, "Hidden Panels"), 
-
-        React.DOM.table({className: "table table-striped"}, 
-          React.DOM.thead(null, 
-            React.DOM.tr({className: "form-group row"}, 
-              React.DOM.th({className: "col-md-4"}, "Panel"), 
-              React.DOM.th({className: "col-md-8"}, "Hidden")
+    return (
+      React.DOM.div({className: "form-group row hiddenPanels"}, 
+        React.DOM.div({className: "col-md-3"}, 
+          React.DOM.strong(null, "Hidden Panels"), 
+          React.DOM.small({className: "help-block"}, "Panels marked as hidden will never be shown to you.")
+        ), 
+        React.DOM.div({className: "col-md-9"}, 
+          React.DOM.table({className: "table table-striped"}, 
+            React.DOM.thead(null, 
+              React.DOM.tr({className: "form-group row"}, 
+                React.DOM.th({className: "col-md-4"}, "Panel"), 
+                React.DOM.th({className: "col-md-8"}, "Hidden")
+              )
+            ), 
+            React.DOM.tbody(null, 
+              this.state.panels.map(function(panel, i) {
+                if (_.contains(this.state.hiddenPanels, panel.id)) {
+                  return React.DOM.tr({className: "form-group row", key: i}, 
+                    React.DOM.td({className: "col-md-4"}, React.DOM.label({htmlFor: panel.id}, React.DOM.s(null, panel.name))), 
+                    React.DOM.td({className: "col-md-8"}, React.DOM.input({type: "checkbox", id: panel.id, ref: panel.id, value: panel.id, checked: "checked", onChange: this.handleUpdateHiddenPanels}))
+                  )
+                } else {
+                  return React.DOM.tr({className: "form-group row", key: i}, 
+                    React.DOM.td({className: "col-md-4"}, React.DOM.label({htmlFor: panel.id}, panel.name)), 
+                    React.DOM.td({className: "col-md-8"}, React.DOM.input({type: "checkbox", id: panel.id, ref: panel.id, value: panel.id, onChange: this.handleUpdateHiddenPanels}))
+                  )
+                }
+              }.bind(this))
             )
-          ), 
-          React.DOM.tbody(null, 
-            this.state.panels.map(function(panel, i) {
-              if (_.contains(this.state.hiddenPanels, panel.id)) {
-                return React.DOM.tr({className: "form-group row", key: i}, 
-                  React.DOM.td({className: "col-md-4"}, panel.name), 
-                  React.DOM.td({className: "col-md-8"}, React.DOM.input({type: "checkbox", ref: panel.id, value: panel.id, checked: "checked", onChange: this.handleUpdateHiddenPanels}))
-                )
-              } else {
-                return React.DOM.tr({className: "form-group row", key: i}, 
-                  React.DOM.td({className: "col-md-4"}, panel.name), 
-                  React.DOM.td({className: "col-md-8"}, React.DOM.input({type: "checkbox", ref: panel.id, value: panel.id, onChange: this.handleUpdateHiddenPanels}))
-                )
-              }
-            }.bind(this))
           )
         )
       )
@@ -20089,11 +20099,14 @@ module.exports = React.createClass({displayName: 'exports',
         ), 
         React.DOM.hr(null), 
         React.DOM.form({role: "form", className: "optionsForm", onSubmit: this.handleSubmit}, 
-          React.DOM.div({className: "form-group"}, 
-            React.DOM.label({htmlFor: "data_url"}, "Please enter the configuration URL provided by your sysadmin or manager."), 
-            
-            React.DOM.input({type: "url", valueLink: this.linkState('currentDataURL'), className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."}), 
-            React.DOM.p({className: "help-block"}, React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
+          React.DOM.div({className: "form-group row"}, 
+            React.DOM.div({className: "col-md-3"}, 
+              React.DOM.strong(null, "Configuration URL"), 
+              React.DOM.small({className: "help-block"}, "The configuration URL provided by your sysadmin or manager. ", React.DOM.a({href: "https://gist.github.com/umbrae/0c15bf10861e21657ac0"}, "A sample version of an Intranaut configuration can be found here"), ".")
+            ), 
+            React.DOM.div({className: "col-md-9"}, 
+              React.DOM.input({type: "url", valueLink: this.linkState('currentDataURL'), className: "form-control input-lg", size: "80", placeholder: "e.g. https://gist.github.com/..."})
+            )
           ), 
 
           CustomLinks(null), 

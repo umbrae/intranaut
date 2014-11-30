@@ -84,6 +84,7 @@ module.exports = React.createClass({
           header={this.state.config.header}
           search={this.state.config.search} />
         <PanelList />
+        <a className="configLink" aria-label="Configuration" href="/build/html/options.html"><span className="glyphicon glyphicon-cog"></span></a>  
       </div>
     );
   }

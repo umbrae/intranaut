@@ -63,22 +63,26 @@ var CustomLinks = React.createClass({
     }.bind(this));
     linkInputs.push(this._linkFragment("", "", linkInputs.length));
 
-    return (<fieldset>
-        <legend>Custom Links</legend>
-        <p>Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you.</p>
-
-        <table className="table table-striped">
-          <thead>
-            <tr className="form-group row">
-              <th className="col-md-4">Link Name</th>
-              <th className="col-md-8">Link URL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linkInputs}
-          </tbody>
-        </table>
-      </fieldset>
+    return (
+      <div className="form-group row">
+        <div className="col-md-3">
+          <strong>Custom Links</strong>
+          <small className="help-block">Custom Links will show up under a special panel on your new tab for use just like a regular panel, but will be just for you.</small>
+        </div>
+        <div className="col-md-9">
+          <table className="table table-striped">
+            <thead>
+              <tr className="form-group row">
+                <th className="col-md-4">Link Name</th>
+                <th className="col-md-8">Link URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linkInputs}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 })
@@ -119,33 +123,38 @@ var HiddenPanels = React.createClass({
   },
 
   render: function() {
-    return (<fieldset>
-        <legend>Hidden Panels</legend>
-
-        <table className="table table-striped">
-          <thead>
-            <tr className="form-group row">
-              <th className="col-md-4">Panel</th>
-              <th className="col-md-8">Hidden</th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.state.panels.map(function(panel, i) {
-              if (_.contains(this.state.hiddenPanels, panel.id)) {
-                return <tr className="form-group row" key={i}>
-                  <td className="col-md-4">{panel.name}</td>
-                  <td className="col-md-8"><input type="checkbox" ref={panel.id} value={panel.id} checked="checked" onChange={this.handleUpdateHiddenPanels} /></td>
-                </tr>
-              } else {
-                return <tr className="form-group row" key={i}>
-                  <td className="col-md-4">{panel.name}</td>
-                  <td className="col-md-8"><input type="checkbox" ref={panel.id} value={panel.id} onChange={this.handleUpdateHiddenPanels} /></td>
-                </tr>
-              }
-            }.bind(this))}
-          </tbody>
-        </table>
-      </fieldset>
+    return (
+      <div className="form-group row hiddenPanels">
+        <div className="col-md-3">
+          <strong>Hidden Panels</strong>
+          <small className="help-block">Panels marked as hidden will never be shown to you.</small>
+        </div>
+        <div className="col-md-9">
+          <table className="table table-striped">
+            <thead>
+              <tr className="form-group row">
+                <th className="col-md-4">Panel</th>
+                <th className="col-md-8">Hidden</th>
+              </tr>
+            </thead>
+            <tbody>
+              {this.state.panels.map(function(panel, i) {
+                if (_.contains(this.state.hiddenPanels, panel.id)) {
+                  return <tr className="form-group row" key={i}>
+                    <td className="col-md-4"><label htmlFor={panel.id}><s>{panel.name}</s></label></td>
+                    <td className="col-md-8"><input type="checkbox" id={panel.id} ref={panel.id} value={panel.id} checked="checked" onChange={this.handleUpdateHiddenPanels} /></td>
+                  </tr>
+                } else {
+                  return <tr className="form-group row" key={i}>
+                    <td className="col-md-4"><label htmlFor={panel.id}>{panel.name}</label></td>
+                    <td className="col-md-8"><input type="checkbox" id={panel.id} ref={panel.id} value={panel.id} onChange={this.handleUpdateHiddenPanels} /></td>
+                  </tr>
+                }
+              }.bind(this))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 })
@@ -204,11 +213,14 @@ module.exports = React.createClass({
         </header>
         <hr />
         <form role="form" className="optionsForm" onSubmit={this.handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
-            
-            <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
-            <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
+          <div className="form-group row">
+            <div className="col-md-3">
+              <strong>Configuration URL</strong>
+              <small className="help-block">The configuration URL provided by your sysadmin or manager. <a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</small>
+            </div>
+            <div className="col-md-9">
+              <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+            </div>
           </div>
 
           <CustomLinks />
