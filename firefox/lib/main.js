@@ -1,3 +1,4 @@
+let { Cc, Ci } = require('chrome');
 var { viewFor } = require("sdk/view/core");
 
 var tabs = require("sdk/tabs");
@@ -33,4 +34,35 @@ tabs.on('open', function onOpen(tab) {
   // tab.url = "about:blank";
 
   tab.url = self.data.url("build/html/tab.html");
+
+
+  // For later: This is horrible struggling with trying to get focus to the URL bar so that when the new page is
+  // loaded we can focus the URL bar again.
+  tab.on('ready', function(tab) {
+    var lowLevelTab = viewFor(tab);
+    var tabbrowser = tabutils.getTabBrowserForTab(lowLevelTab);
+
+    var DOMWin = tabbrowser.contentWindow;
+
+    var DOMWin = DOMWin.QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebNavigation)
+      .QueryInterface(Ci.nsIDocShellTreeItem)
+      .rootTreeItem
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIDOMWindow);
+
+
+    var doc = DOMWin.document;
+//    console.log(doc.activeElement.parentNode.parentNode.parentNode.focus());
+    // console.log(doc.activeElement.parentNode.parentNode.parentNode);
+    // console.log(doc.activeElement.parentNode.parentNode.parentNode.parentNode);
+    var urlbar = doc.getElementById("urlbar");
+    console.log(urlbar.value);
+    urlbar.value = '';
+    console.log(urlbar);
+
+    console.log(tabbrowser.document);
+    console.log(doc.getElementById("urlbar").focus());
+  })
+
 });
