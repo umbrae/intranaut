@@ -7,7 +7,6 @@ var { attach, detach } = require('sdk/content/mod');
 var { Style } = require('sdk/stylesheet/style');
 var tabutils = require('sdk/tabs/utils');
 
-
 var style = Style({
   source: "#newtab-scrollbox { opacity: 0 !important; }"
 })
@@ -18,51 +17,46 @@ function hideNewTabDefault(tab) {
   attach(style, win);
 }
 
+var customTabUrl = self.data.url("build/html/tab.html");
 
 // Listen for tab openings.
 tabs.on('open', function onOpen(tab) {
 
   // Both on open and ready, attempt to hide the newtab default.
-  // It appears that certain new tabs will not call ready due to precaching, but will call open.
-  // When ready is called however, open's hide will be irrelevant as it was not precached.
+  // It appears that certain new tabs will not call ready due to precaching
+  // of about:newtab, but *will* call open. When ready is called however,
+  // open's hide will be irrelevant as it was not precached.
   hideNewTabDefault(tab);
   tab.on('ready', function(tab){
     hideNewTabDefault(tab);
   });
 
-  // hack: set to about:blank first to avoid flash of old default newtab while the other tab is loading
-  // tab.url = "about:blank";
-
-  tab.url = self.data.url("build/html/tab.html");
+  tab.url = customTabUrl;
 
 
-  // For later: This is horrible struggling with trying to get focus to the URL bar so that when the new page is
-  // loaded we can focus the URL bar again.
+  // When we've successfully loaded something into a tab, check if it's our
+  // custom new tab URL. If it is, clear out the URL bar and focus it to
+  // prep for quick awesomebaring.
   tab.on('ready', function(tab) {
-    var lowLevelTab = viewFor(tab);
-    var tabbrowser = tabutils.getTabBrowserForTab(lowLevelTab);
+    if (tab.url !== customTabUrl) {
+      return;
+    }
 
-    var DOMWin = tabbrowser.contentWindow;
-
-    var DOMWin = DOMWin.QueryInterface(Ci.nsIInterfaceRequestor)
+    var tabBrowser = tabutils.getTabBrowserForTab(viewFor(tab));
+    var DOMWin = tabBrowser.contentWindow
+      .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIWebNavigation)
       .QueryInterface(Ci.nsIDocShellTreeItem)
       .rootTreeItem
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIDOMWindow);
-
-
     var doc = DOMWin.document;
-//    console.log(doc.activeElement.parentNode.parentNode.parentNode.focus());
-    // console.log(doc.activeElement.parentNode.parentNode.parentNode);
-    // console.log(doc.activeElement.parentNode.parentNode.parentNode.parentNode);
     var urlbar = doc.getElementById("urlbar");
-    console.log(urlbar.value);
-    urlbar.value = '';
-    console.log(urlbar);
 
-    console.log(tabbrowser.document);
-    console.log(doc.getElementById("urlbar").focus());
+    if (urlbar) {
+      // Clear out the URL bar for quick searching, and focus it
+      urlbar.value = '';
+      urlbar.focus();
+    }
   })
-
 });

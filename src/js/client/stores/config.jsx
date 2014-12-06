@@ -1,7 +1,7 @@
 var BaseStore = require('./base.jsx');
 var DataURLStore = require('./dataurl.jsx');
 var assign = require('object-assign');
-
+var storage = require('../util/storage.js');
 
 var REFRESH_TIME = 600;
 
@@ -36,7 +36,7 @@ ConfigStore = assign({}, BaseStore, {
   setConfig: function(cfg) {
     config = cfg;
     this.touchLastFetch();
-    chrome.storage.local.set({
+    storage.set('local', {
       config: JSON.stringify(config),
       configLastFetch: lastFetch
     });
@@ -48,7 +48,7 @@ ConfigStore = assign({}, BaseStore, {
   },
 
   loadFromStorage: function() {
-    chrome.storage.local.get({
+    storage.get('local', {
       configLastFetch: null,
       config: DEFAULT_CONFIG_TEMPLATE,
     }, function(items) {

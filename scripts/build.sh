@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 mkdir -p build/{css,html,img,vendor,js/vendor}
 
-./node_modules/.bin/browserify -t reactify src/js/client.jsx | ./node_modules/.bin/uglifyjs > build/js/client-bundle.js
+# | ./node_modules/.bin/uglifyjs 
+./node_modules/.bin/browserify -t reactify src/js/client.jsx > build/js/client-bundle.js
 cp -rp src/css/* build/css/
 cp -rp src/html/* build/html/
 cp -rp src/img/* build/img/

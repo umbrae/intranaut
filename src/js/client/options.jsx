@@ -219,7 +219,12 @@ module.exports = React.createClass({
               <small className="help-block">The configuration URL provided by your sysadmin or manager. <a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</small>
             </div>
             <div className="col-md-9">
-              <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+              <div className="input-group">
+                <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control" size="80" placeholder="e.g. https://gist.github.com/..." />
+                <span className="input-group-btn">
+                  <button className="btn btn-primary" type="button">Load</button>
+                </span>
+              </div>
             </div>
           </div>
 

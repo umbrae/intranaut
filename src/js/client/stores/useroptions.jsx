@@ -1,5 +1,6 @@
 var BaseStore = require('./base.jsx');
 var assign = require('object-assign');
+var storage = require('../util/storage.js');
 
 var panelOrder = [];
 var customLinks = [];
@@ -20,7 +21,7 @@ UserOptionsStore = assign({}, BaseStore, {
 
   setHiddenPanels: function(panels) {
     hiddenPanels = panels;
-    chrome.storage.local.set({
+    storage.set('local', {
       hiddenPanels: JSON.stringify(hiddenPanels)
     });
     this.emitChange();
@@ -28,7 +29,7 @@ UserOptionsStore = assign({}, BaseStore, {
 
   setPanelOrder: function(order) {
     panelOrder = order;
-    chrome.storage.local.set({
+    storage.set('local', {
       panelOrder: JSON.stringify(order)
     });
     this.emitChange();
@@ -36,14 +37,14 @@ UserOptionsStore = assign({}, BaseStore, {
 
   setCustomLinks: function(links) {
     customLinks = links;
-    chrome.storage.local.set({
+    storage.set('local', {
       customLinks: JSON.stringify(links)
     });
     this.emitChange();
   },
 
   loadFromStorage: function() {
-    chrome.storage.local.get({
+    storage.get('local', {
       panelOrder: [],
       customLinks: [],
       hiddenPanels: []

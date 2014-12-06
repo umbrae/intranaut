@@ -3,7 +3,7 @@
   "name": "Intranaut",
   "short_name": "Intranaut",
   "description": "An instant intranet.",
-  "version": "0.3",
+  "version": "0.3.1",
   "author": "Chris Dary <umbrae@gmail.com>",
   "icons": { "16": "build/img/icon16.png",
            "48": "build/img/icon48.png",
