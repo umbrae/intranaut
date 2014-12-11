@@ -1,9 +1,9 @@
 {
-  "name": "firefox",
-  "title": "firefox",
+  "name": "intranaut",
+  "title": "Intranaut",
   "id": "jid1-1vzzS1S7sPYe1g",
-  "description": "a basic add-on",
-  "author": "",
-  "license": "MPL 2.0",
+  "description": "An instant intranet for your company.",
+  "author": "Chris Dary",
+  "license": "Copyright 2014 Chris Dary",
   "version": "0.1"
 }

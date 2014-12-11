@@ -1,47 +1,48 @@
-let { Cc, Ci } = require('chrome');
+var self = require("sdk/self");
+var tabs = require("sdk/tabs");
+var tabutils = require('sdk/tabs/utils');
+var { attach, detach } = require('sdk/content/mod');
+var { Cc, Ci } = require('chrome');
+var { Style } = require('sdk/stylesheet/style');
 var { viewFor } = require("sdk/view/core");
 
-var tabs = require("sdk/tabs");
-var self = require("sdk/self");
-var { attach, detach } = require('sdk/content/mod');
-var { Style } = require('sdk/stylesheet/style');
-var tabutils = require('sdk/tabs/utils');
-
-var style = Style({
+const NEWTAB_STYLE_OVERRIDE = Style({
   source: "#newtab-scrollbox { opacity: 0 !important; }"
 })
+
+const CUSTOM_TAB_URL = self.data.url("html/tab.html");
 
 function hideNewTabDefault(tab) {
   var lowLevelTab = viewFor(tab);
   var win = tabutils.getTabContentWindow(lowLevelTab);
-  attach(style, win);
+  if (win) {
+    attach(NEWTAB_STYLE_OVERRIDE, win);
+  }
 }
 
-var customTabUrl = self.data.url("build/html/tab.html");
-
-// Listen for tab openings.
 tabs.on('open', function onOpen(tab) {
-
-  // Both on open and ready, attempt to hide the newtab default.
-  // It appears that certain new tabs will not call ready due to precaching
-  // of about:newtab, but *will* call open. When ready is called however,
-  // open's hide will be irrelevant as it was not precached.
-  hideNewTabDefault(tab);
-  tab.on('ready', function(tab){
+  // On new tab open, about:newtab may be precached, in which case the tab
+  // readyState will already be complete. We should hide our tab default
+  // styles and navigate immediately.
+  if (tab.readyState === "complete" && tab.url === "about:newtab") {
     hideNewTabDefault(tab);
-  });
+    tab.url = CUSTOM_TAB_URL;
+  }
+});
 
-  tab.url = customTabUrl;
+// When we've successfully loaded something into a tab, check if it's our
+// custom new tab URL. If it is, clear out the URL bar and focus it to
+// prep for quick awesomebaring.
+tabs.on('ready', function(tab) {
+  // In the case that the tab was not precached and we're on
+  // about:newtab, navigate to our custom tab url.
+  if (tab.url === "about:newtab") {
+    hideNewTabDefault(tab);
+    tab.url = CUSTOM_TAB_URL;
+  }
 
-
-  // When we've successfully loaded something into a tab, check if it's our
-  // custom new tab URL. If it is, clear out the URL bar and focus it to
-  // prep for quick awesomebaring.
-  tab.on('ready', function(tab) {
-    if (tab.url !== customTabUrl) {
-      return;
-    }
-
+  // Clear and focus the URL bar for quick searching / navigating.
+  if (tab.url === CUSTOM_TAB_URL || tab.url === "about:newtab") {
     var tabBrowser = tabutils.getTabBrowserForTab(viewFor(tab));
     var DOMWin = tabBrowser.contentWindow
       .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -55,8 +56,8 @@ tabs.on('open', function onOpen(tab) {
 
     if (urlbar) {
       // Clear out the URL bar for quick searching, and focus it
-      urlbar.value = '';
+      urlbar.value = urlbar.value.replace(CUSTOM_TAB_URL, '');
       urlbar.focus();
     }
-  })
-});
+  }
+})
