@@ -34,10 +34,16 @@ module.exports = React.createClass({
   },
 
   _onConfigChange: function() {
-    this.setState(getConfigState());
+    if (this.isMounted()) {
+      this.setState(getConfigState());
+    }
   },
 
   _onDataURLChange: function() {
+    if (!this.isMounted()) {
+      return;
+    }
+
     var newState = getDataURLState();
 
     // If we've updated our dataURL from one url to another, refresh our config.
@@ -50,7 +56,9 @@ module.exports = React.createClass({
   },
 
   _onUserOptionsChange: function() {
-    this.setState(getUserOptionsState());
+    if (this.isMounted()) {
+      this.setState(getUserOptionsState());
+    }
   },
 
   /**
@@ -70,21 +78,18 @@ module.exports = React.createClass({
   render: function() {
     var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
 
-    if (this.props.isOptions) {
-      return <Options />;
-    }
-
     if (firstRun) {
       return <ZeroState />;
     }
 
     return (
       <div>
+        <Options showByDefault={this.props.isOptions} />
         <NavBar
           header={this.state.config.header}
           search={this.state.config.search} />
         <PanelList />
-        <a className="configLink" aria-label="Configuration" href="/build/html/options.html"><span className="glyphicon glyphicon-cog"></span></a>  
+        <a className="configLink" aria-label="Configuration" data-toggle="modal" data-target="#options-modal"><span className="glyphicon glyphicon-cog"></span></a>  
       </div>
     );
   }

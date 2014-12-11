@@ -6,6 +6,10 @@ module.exports = React.createClass({
 
   dragStart: function(e) {
     this.props.setDragging(e.target);
+
+    // Firefox apparently requires calling dataTransfer.setData
+    // for the drag to properly work
+    e.dataTransfer.setData("text/html", e.currentTarget);
   },
 
   dragEnd: function(e) {

@@ -86,6 +86,7 @@ ConfigStore = assign({}, BaseStore, {
       } catch(e) {
         alert("Unable to load config. There may be a problem with your configuration file? " +
               "Please check your options and contact your sysadmin.");
+        console.log(e);
         return;
       }
 

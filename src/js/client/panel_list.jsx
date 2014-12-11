@@ -4,11 +4,11 @@ var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
 function getPanelState() {
-  var panels = ConfigStore.getConfig().panels,
+  var panels = _.clone(ConfigStore.getConfig().panels),
     customLinks = UserOptionsStore.getCustomLinks(),
     hiddenPanels = UserOptionsStore.getHiddenPanels();
 
-  if (customLinks && customLinks.length > 0) {
+  if (customLinks && customLinks.length > 0 && (panels.length == 0 || panels[panels.length-1].id !== "intranaut-custom")) {
     panels.push({
           id: "intranaut-custom",
           name: "My Links",
@@ -69,6 +69,11 @@ module.exports = React.createClass({
     if (!panelOrder || panelOrder.length < this.state.panels.length) {
       panelOrder = _.pluck(this.state.panels, 'id');
     }
+
+    // If any panels have been newly loaded since we last set our panel order,
+    // they will be at the end. Add them into our panelOrder before setting swap.
+    var missingPanels = _.difference(_.pluck(this.state.panels, 'id'), this.state.panelOrder);
+    panelOrder = panelOrder.concat(missingPanels);
 
     var srcIndex = _.indexOf(panelOrder, srcId);
     var destIndex = _.indexOf(panelOrder, destId);

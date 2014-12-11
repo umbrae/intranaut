@@ -1,5 +1,4 @@
 var React = require('react/addons');
-var Store = require('./store.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
@@ -22,7 +21,9 @@ var CustomLinks = React.createClass({
   },
 
   _onUserOptionsChange: function() {
-    this.setState(getUserOptionsState());
+    if (this.isMounted()) {
+      this.setState(getUserOptionsState());
+    }
   },
 
   componentDidMount: function () {
@@ -98,13 +99,17 @@ var HiddenPanels = React.createClass({
   },
 
   _onConfigChange: function() {
-    this.setState({
-      panels: ConfigStore.getConfig().panels
-    });
+    if (this.isMounted()) {
+      this.setState({
+        panels: ConfigStore.getConfig().panels
+      });
+    }
   },
 
   _onUserOptionsChange: function() {
-    this.setState(getUserOptionsState());
+    if (this.isMounted()) {
+      this.setState(getUserOptionsState());
+    }
   },
 
   componentDidMount: function() {
@@ -172,77 +177,68 @@ module.exports = React.createClass({
   },
 
   _onDataURLChange: function() {
-    this.setState({
-      currentDataURL: DataURLStore.getDataURL()
-    });
+    if (this.isMounted()) {
+      this.setState({
+        currentDataURL: DataURLStore.getDataURL()
+      });
+    }
   },
 
   componentDidMount: function () {
     DataURLStore.addChangeListener(this._onDataURLChange);
+
+    if (this.props.showByDefault) {
+      $('#options-modal').modal('show');
+    }
   },
 
   handleSubmit: function(e) {
     e.preventDefault();
-
     DataURLStore.setDataURL(this.state.currentDataURL);
-
-    var customLinkContents = []
-    _.each(this.refs, function(ref, name) {
-      if (name.indexOf('customLink') === 0) {
-        customLinkContents.push(ref.state)
-      }
-    });
-
-    Store.emit('customLinksChange', customLinkContents);
-
-    this.setState({
-      status: "Saved."
-    });
   },
 
   render: function() {
-    var formStatus;
-    if (this.state.status) {
-      formStatus = <div className="alert alert-success">{this.state.status}</div>
-    }
 
     return (
-      <section className="options col-md-8 col-md-push-2">
-        <header>
-          <a href="/build/html/tab.html"><h1>Intranaut</h1></a>
-        </header>
-        <hr />
-        <form role="form" className="optionsForm" onSubmit={this.handleSubmit}>
-          <div className="form-group row">
-            <div className="col-md-3">
-              <strong>Configuration URL</strong>
-              <small className="help-block">The configuration URL provided by your sysadmin or manager. <a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</small>
-            </div>
-            <div className="col-md-9">
-              <div className="input-group">
-                <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control" size="80" placeholder="e.g. https://gist.github.com/..." />
-                <span className="input-group-btn">
-                  <button className="btn btn-primary" type="button">Load</button>
-                </span>
+      <div className="modal fade" id="options-modal" tabIndex="-1" role="dialog">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <header className="modal-header">
+              <button type="button" className="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span className="sr-only">Close</span></button>              
+              <a href="tab.html"><h1>Intranaut</h1></a>
+            </header>
+            <form role="form" className="optionsForm modal-body" onSubmit={this.handleSubmit}>
+              <div className="form-group row">
+                <div className="col-md-3">
+                  <strong>Configuration URL</strong>
+                  <small className="help-block">The configuration URL provided by your sysadmin or manager. <a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</small>
+                </div>
+                <div className="col-md-9">
+                  <div className="input-group">
+                    <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control" size="80" placeholder="e.g. https://gist.github.com/..." />
+                    <span className="input-group-btn">
+                      <button className="btn btn-primary" type="button" onClick={this.handleSubmit}>Load</button>
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              <hr />
+
+              <CustomLinks />
+
+              <hr />
+
+              <HiddenPanels />
+            </form>
+            <div className="modal-footer">
+              <p className="text-center">
+                <button type="button" data-dismiss="modal" className="btn btn-primary btn-lg">Save and Close</button>
+              </p>
             </div>
           </div>
-
-          <hr />
-
-          <CustomLinks />
-
-          <hr />
-
-          <HiddenPanels />
-
-          <p>
-            <button type="submit" className="btn btn-primary btn-lg">Save Changes</button>
-          </p>
-
-          {formStatus}
-        </form>
-      </section>
+        </div>
+      </div>
     );
   }
 });

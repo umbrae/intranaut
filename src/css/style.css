@@ -51,6 +51,7 @@
 }
 
 .configLink {
+  cursor: pointer;
   position: absolute;
   left: 5px;
   top: 5px;
@@ -61,11 +62,12 @@
   display: inline-block;
 }
 
-.options header h1 {
-  background: transparent url(/build/img/icon128.png) center left no-repeat;
+#options-modal header h1 {
+  background: transparent url(../img/icon128.png) center left no-repeat;
   background-size: 48px;
   padding-left: 52px;
   line-height: 52px;
   vertical-align: middle;
   color: -text-color;
+  margin: 0;
 }
