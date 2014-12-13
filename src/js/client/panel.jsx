@@ -41,7 +41,7 @@ module.exports = React.createClass({
     return (
       /* jshint ignore:start */
       <li className="col-md-4" draggable="true" onDragStart={this.dragStart} onDragEnd={this.dragEnd} onDragOver={this.dragOver} onDragEnter={this.dragEnter} onDragLeave={this.dragLeave} onDrop={this.drop} id={this.props.id}>
-        <div className="panel panel-success">
+        <div className="panel panel-default">
           <div className="panel-heading">
             <span className="panel-name">{this.props.name}</span>
             <span className="pull-right glyphicon glyphicon-th"></span>

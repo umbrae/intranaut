@@ -28,7 +28,7 @@ module.exports = React.createClass({
           <div className="input-group">
             <input type="text" id="searchString" name={this.props.search.searchParam} className="form-control" placeholder={this.props.search.placeholder} />
             <span className="input-group-btn">
-              <button className="btn btn-success" type="submit">{this.props.search.button_title}</button>
+              <button className="btn btn-primary" type="submit">{this.props.search.button_title}</button>
             </span>
           </div>
         </form>
