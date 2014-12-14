@@ -1,10 +1,10 @@
-var React = require('react/addons')
+var _ = require('underscore');
+
+var React = require('react')
 var DataURLStore = require('./stores/dataurl.jsx');
 var ConfigStore = require('./stores/config.jsx');
 
 module.exports = React.createClass({
-  mixins: [React.addons.LinkedStateMixin],
-
   getInitialState: function() {
     return {
       status: false,
@@ -33,6 +33,12 @@ module.exports = React.createClass({
     });
   }, 
 
+  handleCurrentDataURLChange: function(e) {
+    this.setState({
+      currentDataURL: e.target.value
+    })
+  },
+
   render: function() {
     var formStatus;
     if (this.state.status) {
@@ -48,7 +54,7 @@ module.exports = React.createClass({
         <form role="form" className="welcomeForm" onSubmit={this.handleSubmit}>
           <div className="form-group">
             <label htmlFor="data_url">Please enter the configuration URL provided by your sysadmin or manager.</label>
-            <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
+            <input type="url" value={this.state.currentDataURL} onChange={this.handleCurrentDataURLChange} className="form-control input-lg" size="80" placeholder="e.g. https://gist.github.com/..." />
             <p className="help-block"><a href="https://gist.github.com/umbrae/0c15bf10861e21657ac0">A sample version of an Intranaut configuration can be found here</a>.</p>
           </div>
 

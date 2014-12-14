@@ -1,12 +1,16 @@
-var React = require('react/addons')
+var _ = require('underscore');
+
+var React = require('react');
 var NavBar = require('./nav_bar.jsx');
 var PanelList = require('./panel_list.jsx');
 var ZeroState = require('./zero_state.jsx');
 var Options = require('./options.jsx');
+var Styles = require('./styles.jsx');
 
 var ConfigStore = require('./stores/config.jsx');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
+var StylesStore = require('./stores/style.jsx');
 
 function getDataURLState() {
   return {
@@ -28,14 +32,20 @@ function getUserOptionsState() {
   };
 }
 
+function getRenderReadyState() {
+  return {
+    "renderReady": StylesStore.hasLoaded() && ConfigStore.hasLoaded()
+  };
+}
+
 module.exports = React.createClass({
   getInitialState: function() {
-    return _.extend({}, getDataURLState(), getConfigState(), getUserOptionsState());
+    return _.extend({}, getDataURLState(), getConfigState(), getUserOptionsState(), getRenderReadyState());
   },
 
   _onConfigChange: function() {
     if (this.isMounted()) {
-      this.setState(getConfigState());
+      this.setState(_.extend({}, getConfigState(), getRenderReadyState()));
     }
   },
 
@@ -61,6 +71,12 @@ module.exports = React.createClass({
     }
   },
 
+  _onStyleChange: function() {
+    if (this.isMounted()) {
+      this.setState(getRenderReadyState());
+    }
+  },
+
   /**
    * Fetch our config from localstorage, and render it. If we have no config yet,
    * fetch it first. If we have a config but it's out of date, refresh in the background.
@@ -69,14 +85,20 @@ module.exports = React.createClass({
     ConfigStore.addChangeListener(this._onConfigChange);
     DataURLStore.addChangeListener(this._onDataURLChange);
     UserOptionsStore.addChangeListener(this._onUserOptionsChange);
+    StylesStore.addChangeListener(this._onStyleChange);
 
     DataURLStore.loadFromStorage();
     ConfigStore.loadFromStorage();
+    StylesStore.loadFromStorage();
     UserOptionsStore.loadFromStorage();
   },
 
   render: function() {
     var firstRun = this.state.configLoaded && (!this.state.dataURL || _.isEmpty(this.state.config.panels));
+
+    if (!this.state.renderReady) {
+      return <div />;
+    }
 
     if (firstRun) {
       return <ZeroState />;
@@ -84,6 +106,7 @@ module.exports = React.createClass({
 
     return (
       <div>
+        <Styles />
         <Options showByDefault={this.props.isOptions} />
         <NavBar
           header={this.state.config.header}

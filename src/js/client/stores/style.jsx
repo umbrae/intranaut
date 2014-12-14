@@ -1,7 +1,10 @@
+var _ = require('underscore');
+
 var BaseStore = require('./base.jsx');
 var assign = require('object-assign');
 var storage = require('../util/storage.js');
 
+var loaded = false;
 var customStyles = [];
 var cachedCSS = {};
 
@@ -23,11 +26,17 @@ StylesStore = assign({}, BaseStore, {
   },
 
   setCachedCSSPath: function(uri, css) {
-    cachedCSS[uri] = css;
-    storage.set('local', {
-      cachedCSS: JSON.stringify(cachedCSS)
-    })
-    this.emitChange();
+    if (cachedCSS[uri] !== css) {
+      cachedCSS[uri] = css;
+      storage.set('local', {
+        cachedCSS: JSON.stringify(cachedCSS)
+      })
+      this.emitChange();
+    }
+  },
+
+  hasLoaded: function() {
+    return loaded;
   },
 
   loadFromStorage: function(cb) {
@@ -46,6 +55,8 @@ StylesStore = assign({}, BaseStore, {
       } catch(e) {
         cachedCSS = {};
       }
+
+      loaded = true;
 
       if (typeof(cb) !== "undefined") {
         cb();

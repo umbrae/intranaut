@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var BaseStore = require('./base.jsx');
 var DataURLStore = require('./dataurl.jsx');
 var assign = require('object-assign');

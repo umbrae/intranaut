@@ -1,4 +1,6 @@
-var React = require('react/addons')
+var _ = require('underscore');
+
+var React = require('react')
 
 var PanelItem = require('./panel_item.jsx');
 

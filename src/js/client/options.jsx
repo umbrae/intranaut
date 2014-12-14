@@ -1,4 +1,7 @@
-var React = require('react/addons');
+var _ = require('underscore');
+var $ = require('jquery');
+
+var React = require('react');
 var DataURLStore = require('./stores/dataurl.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
 
@@ -11,8 +14,6 @@ function getUserOptionsState() {
 
 // Todo: All these classes seem to rely on the same state. Should they be merged? Subclass?
 var CustomLinks = React.createClass({
-  mixins: [React.addons.LinkedStateMixin],
-
   getInitialState: function() {
     return {
       name: "",
@@ -89,8 +90,6 @@ var CustomLinks = React.createClass({
 })
 
 var HiddenPanels = React.createClass({
-  mixins: [React.addons.LinkedStateMixin],
-
   getInitialState: function() {
     return {
       panels: ConfigStore.getConfig().panels,
@@ -165,8 +164,6 @@ var HiddenPanels = React.createClass({
 })
 
 module.exports = React.createClass({
-  mixins: [React.addons.LinkedStateMixin],
-
   getInitialState: function() {
     return {
       status: false,
@@ -197,6 +194,12 @@ module.exports = React.createClass({
     DataURLStore.setDataURL(this.state.currentDataURL);
   },
 
+  handleCurrentDataURLChange: function(e) {
+    this.setState({
+      currentDataURL: e.target.value
+    })
+  },
+
   render: function() {
 
     return (
@@ -215,7 +218,7 @@ module.exports = React.createClass({
                 </div>
                 <div className="col-md-9">
                   <div className="input-group">
-                    <input type="url" valueLink={this.linkState('currentDataURL')} className="form-control" size="80" placeholder="e.g. https://gist.github.com/..." />
+                    <input type="url" value={this.state.currentDataURL} onChange={this.handleCurrentDataURLChange} className="form-control" size="80" placeholder="e.g. https://gist.github.com/..." />
                     <span className="input-group-btn">
                       <button className="btn btn-primary" type="button" onClick={this.handleSubmit}>Load</button>
                     </span>

@@ -1,4 +1,7 @@
-var React = require('react/addons')
+var _ = require('underscore');
+var $ = require('jquery');
+
+var React = require('react')
 var Panel = require('./panel.jsx');
 var ConfigStore = require('./stores/config.jsx');
 var UserOptionsStore = require('./stores/useroptions.jsx');
