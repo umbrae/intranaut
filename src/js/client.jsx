@@ -1,5 +1,5 @@
 /* required by bootstrap, so we put it in the global space. Probably hacky, but it works. */
-window.$ = window.jQuery = require('jquery')
+window.$ = window.jQuery = require('jquery');
 
 require('../vendor/snooboots/js/bootstrap.min.js');
 

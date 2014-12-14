@@ -3,6 +3,7 @@ var $ = require('jquery');
 
 var React = require('react')
 var StylesStore = require('./stores/style.jsx');
+var ConfigStore = require('./stores/config.jsx');
 
 function normalizePath(path) {
   var a = document.createElement('a');
@@ -13,7 +14,6 @@ function normalizePath(path) {
 module.exports = React.createClass({
   getInitialState: function() {
     return {
-      lessJsPath: "../js/vendor/less.js-2.1.0/dist/less.js",
       lessPaths: [
         "../vendor/bootstrap/less/bootstrap.less",
         "../css/style.less"
@@ -52,16 +52,21 @@ module.exports = React.createClass({
       });
 
       if (lessCount > 0) {
-        $.getScript(this.state.lessJsPath, function() {
-          less.registerStylesheets();
-          less.refresh().then(function() {
-            var cachedCss = {};
-            _.each(document.getElementsByTagName('style'), function(el) {
-              if (el.id.indexOf('less:') === 0) {
-                StylesStore.setCachedCSSPath(el.id.replace('less:', ''), el.innerText);
-                console.log('stored', el);
-              }
-            });
+        less.registerStylesheets();
+        less.refresh().then(function() {
+          var styleVars = {};
+          _.each(ConfigStore.getConfig().styles, function(style, key) {
+            styleVars['@' + key] = style;
+          });
+          console.log(styleVars);
+          less.modifyVars(styleVars);
+
+          var cachedCss = {};
+          _.each(document.getElementsByTagName('style'), function(el) {
+            if (el.id.indexOf('less:') === 0) {
+              StylesStore.setCachedCSSPath(el.id.replace('less:', ''), el.innerText);
+              console.log('stored', el);
+            }
           });
         });
       }

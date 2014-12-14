@@ -4,7 +4,7 @@
   "description": "Chrome extension that provides an instant intranet for any organization.",
   "devDependencies": {
     "watchify": "~0.6.1",
-    "browserify": "~3.30.0",
+    "browserify": "~7.0.0",
     "nodeunit": "~0.8.5",
     "q": "~1.0.0",
     "jshint": "~2.4.3",

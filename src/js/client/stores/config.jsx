@@ -10,7 +10,8 @@ var REFRESH_TIME = 600;
 var DEFAULT_CONFIG_TEMPLATE = {
   header: false,
   search: false,
-  panels: []
+  panels: [],
+  styles: {}
 }
 
 var config = DEFAULT_CONFIG_TEMPLATE;
